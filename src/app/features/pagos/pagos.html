@@ -1,0 +1,132 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Pagos</h1>
+      <p>{{ total() }} registros</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirRegistrar()">
+      <lucide-icon name="plus" [size]="16" /> Registrar pago
+    </button>
+  </header>
+
+  <div class="filters">
+    <label>Desde <input class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event); cargar()"></label>
+    <label>Hasta <input class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cargar()"></label>
+  </div>
+
+  <div class="card-table">
+    @if (cargando()) { <p class="muted center">Cargando…</p> }
+    @else if (pagos().length === 0) { <p class="muted center">No hay pagos en el rango seleccionado.</p> }
+    @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Miembro</th>
+            <th>Concepto</th>
+            <th>Método</th>
+            <th class="num">Monto</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of pagos(); track p.id_pago) {
+            <tr [class.anulado]="p.estado === 'ANULADO'">
+              <td>{{ p.fecha_pago | date:'short' }}</td>
+              <td>
+                <strong>{{ p.miembro?.primer_nombre }} {{ p.miembro?.primer_apellido }}</strong><br>
+                <small class="muted">{{ p.miembro?.codigo_qr }}</small>
+              </td>
+              <td>
+                {{ p.concepto || (p.membresia?.plan?.nombre ? 'Plan ' + p.membresia?.plan?.nombre : '—') }}
+              </td>
+              <td>{{ p.metodo }}</td>
+              <td class="num">{{ p.monto | currency:'COP':'symbol':'1.0-0' }}</td>
+              <td>
+                <span class="badge"
+                      [class.b-ok]="p.estado === 'PAGADO'"
+                      [class.b-off]="p.estado === 'ANULADO'">{{ p.estado }}</span>
+              </td>
+              <td class="actions">
+                @if (p.estado === 'PAGADO') {
+                  <button class="btn btn-ghost" type="button" (click)="anular(p)" title="Anular">
+                    <lucide-icon name="x" [size]="14" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
+
+@if (modalAbierto()) {
+  <div class="modal" (click)="cerrarModal()">
+    <div class="modal__panel" (click)="$event.stopPropagation()">
+      <h2>Registrar pago</h2>
+
+      <label class="autocomplete">
+        Miembro *
+        <input class="input" type="search" placeholder="Buscar por nombre, ID o QR…"
+               [ngModel]="busquedaMiembro()" (ngModelChange)="buscarMiembros($event)" />
+        @if (miembrosBusqueda().length > 0 && !miembroSel()) {
+          <ul class="dropdown">
+            @for (m of miembrosBusqueda(); track m.id_miembro) {
+              <li (click)="seleccionarMiembro(m)">
+                <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
+                <small>{{ m.codigo_qr }}</small>
+              </li>
+            }
+          </ul>
+        }
+      </label>
+
+      <label>
+        Plan (opcional — auto-renueva membresía)
+        <select class="select" [ngModel]="planSelId()" (ngModelChange)="onPlanChange($event)">
+          <option [ngValue]="null">— Sin plan (pago suelto) —</option>
+          @for (p of planes(); track p.id_plan) {
+            <option [ngValue]="p.id_plan">
+              {{ p.nombre }} · {{ p.duracion_meses }}m · {{ p.precio | currency:'COP':'symbol':'1.0-0' }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <div class="row-2">
+        <label>
+          Monto *
+          <input class="input" type="number" min="0" step="100"
+                 [ngModel]="monto()" (ngModelChange)="monto.set($event)" />
+        </label>
+        <label>
+          Método *
+          <select class="select" [ngModel]="metodo()" (ngModelChange)="metodo.set($event)">
+            <option value="EFECTIVO">Efectivo</option>
+            <option value="TARJETA">Tarjeta</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
+            <option value="OTRO">Otro</option>
+          </select>
+        </label>
+      </div>
+
+      <label>
+        Concepto
+        <input class="input" placeholder="Ej: Renovación octubre, suplementos, …"
+               [ngModel]="concepto()" (ngModelChange)="concepto.set($event)" />
+      </label>
+
+      @if (errorForm()) { <p class="error">{{ errorForm() }}</p> }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="cerrarModal()" [disabled]="enviando()">Cancelar</button>
+        <button class="btn btn-primary" type="button" (click)="registrar()" [disabled]="enviando()">
+          {{ enviando() ? 'Registrando…' : 'Registrar pago' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

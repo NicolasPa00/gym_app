@@ -1,0 +1,126 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Membresías</h1>
+      <p>{{ total() }} registros</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirAsignar()">
+      <lucide-icon name="plus" [size]="16" /> Asignar / renovar
+    </button>
+  </header>
+
+  <div class="filters">
+    <select class="select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event); cargar()">
+      <option value="">Todos los estados</option>
+      <option value="ACTIVA">Activas</option>
+      <option value="VENCIDA">Vencidas</option>
+      <option value="PAUSADA">Pausadas</option>
+      <option value="CANCELADA">Canceladas</option>
+    </select>
+  </div>
+
+  <div class="card-table">
+    @if (cargando()) {
+      <p class="muted center">Cargando…</p>
+    } @else if (membresias().length === 0) {
+      <p class="muted center">No hay membresías para mostrar.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Miembro</th>
+            <th>Plan</th>
+            <th>Vigencia</th>
+            <th>Pagado</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of membresias(); track m.id_membresia) {
+            <tr>
+              <td>
+                <strong>{{ m.miembro?.primer_nombre }} {{ m.miembro?.primer_apellido }}</strong>
+                <small class="muted">QR {{ m.miembro?.codigo_qr }}</small>
+              </td>
+              <td>{{ m.plan?.nombre || '—' }}</td>
+              <td>
+                {{ m.fecha_inicio | date:'mediumDate' }}<br>
+                <small>→ {{ m.fecha_fin | date:'mediumDate' }}</small>
+              </td>
+              <td>{{ m.precio_pagado | currency:'COP':'symbol':'1.0-0' }}</td>
+              <td>
+                <span class="badge"
+                      [class.b-ok]="m.estado === 'ACTIVA'"
+                      [class.b-warn]="m.estado === 'PAUSADA'"
+                      [class.b-off]="m.estado === 'VENCIDA' || m.estado === 'CANCELADA'">
+                  {{ m.estado }}
+                </span>
+              </td>
+              <td class="actions">
+                @if (m.estado === 'ACTIVA') {
+                  <button class="btn btn-ghost" type="button" (click)="pausar(m)" title="Pausar">
+                    <lucide-icon name="pause" [size]="14" />
+                  </button>
+                  <button class="btn btn-ghost" type="button" (click)="cancelar(m)" title="Cancelar">
+                    <lucide-icon name="x" [size]="14" />
+                  </button>
+                } @else if (m.estado === 'PAUSADA') {
+                  <button class="btn btn-ghost" type="button" (click)="reanudar(m)" title="Reanudar">
+                    <lucide-icon name="play" [size]="14" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
+
+@if (modalAbierto()) {
+  <div class="modal" (click)="cerrarModal()">
+    <div class="modal__panel" (click)="$event.stopPropagation()">
+      <h2>Asignar / renovar membresía</h2>
+      <p class="hint">Si el miembro ya tiene una membresía vigente, se renueva sumando la duración del plan.</p>
+
+      <label class="autocomplete">
+        Miembro *
+        <input class="input" type="search" placeholder="Buscar por nombre, ID o QR…"
+               [ngModel]="busquedaMiembro()" (ngModelChange)="buscarMiembros($event)" />
+        @if (miembrosBusqueda().length > 0 && !miembroSel()) {
+          <ul class="dropdown">
+            @for (m of miembrosBusqueda(); track m.id_miembro) {
+              <li (click)="seleccionarMiembro(m)">
+                <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
+                <small>{{ m.codigo_qr }} · {{ m.email || m.telefono || 'sin contacto' }}</small>
+              </li>
+            }
+          </ul>
+        }
+      </label>
+
+      <label>
+        Plan *
+        <select class="select" [ngModel]="planSelId()" (ngModelChange)="planSelId.set($event)">
+          <option [ngValue]="null">— Selecciona un plan —</option>
+          @for (p of planes(); track p.id_plan) {
+            <option [ngValue]="p.id_plan">
+              {{ p.nombre }} · {{ p.duracion_meses }}m · {{ p.precio | currency:'COP':'symbol':'1.0-0' }}
+            </option>
+          }
+        </select>
+      </label>
+
+      @if (errorForm()) { <p class="error">{{ errorForm() }}</p> }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="cerrarModal()" [disabled]="enviando()">Cancelar</button>
+        <button class="btn btn-primary" type="button" (click)="asignar()" [disabled]="enviando()">
+          {{ enviando() ? 'Asignando…' : 'Confirmar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

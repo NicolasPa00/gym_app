@@ -1,0 +1,137 @@
+<section class="page">
+  <header class="page__head">
+    <h1>Ventas</h1>
+    <p>Punto de venta de productos del gimnasio</p>
+  </header>
+
+  <div class="pos">
+    <div class="pos__cat card">
+      <div class="search">
+        <lucide-icon name="search" [size]="16" />
+        <input class="input" type="search" placeholder="Buscar producto…"
+               [ngModel]="busquedaProd()" (ngModelChange)="onBusquedaProd($event)" />
+      </div>
+      @if (productos().length === 0) {
+        <p class="muted center">Sin productos disponibles.</p>
+      } @else {
+        <div class="grid">
+          @for (p of productos(); track p.id_producto) {
+            <button class="prod" type="button" (click)="agregar(p)" [disabled]="+p.stock_actual <= 0">
+              <strong>{{ p.nombre }}</strong>
+              <span class="precio">{{ p.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+              <small class="stock" [class.out]="+p.stock_actual <= 0">Stock: {{ +p.stock_actual }}</small>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <aside class="pos__cart card">
+      <h3>Carrito</h3>
+      <div class="cart-items">
+        @if (carrito().length === 0) {
+          <p class="muted center">Vacío. Toca un producto para agregarlo.</p>
+        } @else {
+          @for (item of carrito(); track item.producto.id_producto) {
+            <div class="cart-item">
+              <div class="info">
+                <strong>{{ item.producto.nombre }}</strong>
+                <span>{{ item.producto.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+              </div>
+              <div class="qty">
+                <button class="btn btn-ghost xs" type="button" (click)="cambiarCantidad(item, -1)">−</button>
+                <span>{{ item.cantidad }}</span>
+                <button class="btn btn-ghost xs" type="button" (click)="cambiarCantidad(item, 1)">+</button>
+              </div>
+              <button class="btn btn-ghost xs" type="button" (click)="quitar(item)" title="Quitar">
+                <lucide-icon name="x" [size]="14" />
+              </button>
+            </div>
+          }
+        }
+      </div>
+
+      <hr>
+
+      <label class="autocomplete">
+        Miembro (opcional)
+        @if (miembroSel()) {
+          <div class="miembro-chip">
+            {{ miembroSel()!.primer_nombre }} {{ miembroSel()!.primer_apellido }}
+            <button class="btn btn-ghost xs" type="button" (click)="limpiarMiembro()">×</button>
+          </div>
+        } @else {
+          <input class="input" type="search" placeholder="Buscar miembro para asociar"
+                 [ngModel]="busquedaMiembro()" (ngModelChange)="buscarMiembros($event)" />
+          @if (miembrosBusqueda().length > 0) {
+            <ul class="dropdown">
+              @for (m of miembrosBusqueda(); track m.id_miembro) {
+                <li (click)="seleccionarMiembro(m)">{{ m.primer_nombre }} {{ m.primer_apellido }}</li>
+              }
+            </ul>
+          }
+        }
+      </label>
+
+      <label>
+        Método de pago
+        <select class="select" [ngModel]="metodo()" (ngModelChange)="metodo.set($event)">
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="OTRO">Otro</option>
+        </select>
+      </label>
+
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ total() | currency:'COP':'symbol':'1.0-0' }}</strong>
+      </div>
+
+      @if (errorPos()) { <p class="error">{{ errorPos() }}</p> }
+
+      <button class="btn btn-primary" type="button" (click)="cobrar()" [disabled]="enviando() || carrito().length === 0">
+        {{ enviando() ? 'Cobrando…' : 'Cobrar' }}
+      </button>
+    </aside>
+  </div>
+
+  <h2>Ventas recientes</h2>
+  <div class="card-table">
+    @if (cargandoVentas()) { <p class="muted center">Cargando…</p> }
+    @else if (ventas().length === 0) { <p class="muted center">Sin ventas.</p> }
+    @else {
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Items</th><th>Miembro</th><th>Método</th><th class="num">Total</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (v of ventas(); track v.id_venta) {
+            <tr [class.anulada]="v.estado === 'ANULADA'">
+              <td>{{ v.fecha_venta | date:'short' }}</td>
+              <td>
+                @for (d of v.detalles || []; track d.id_detalle) {
+                  <small>{{ d.cantidad }}× {{ d.producto?.nombre }}</small>
+                }
+              </td>
+              <td>
+                @if (v.miembro) { {{ v.miembro.primer_nombre }} {{ v.miembro.primer_apellido }} }
+                @else { <span class="muted">—</span> }
+              </td>
+              <td>{{ v.metodo }}</td>
+              <td class="num">{{ v.total | currency:'COP':'symbol':'1.0-0' }}</td>
+              <td><span class="badge" [class.b-ok]="v.estado === 'PAGADA'" [class.b-off]="v.estado === 'ANULADA'">{{ v.estado }}</span></td>
+              <td class="actions">
+                @if (v.estado === 'PAGADA') {
+                  <button class="btn btn-ghost" type="button" (click)="anular(v)" title="Anular">
+                    <lucide-icon name="x" [size]="14" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>

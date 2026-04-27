@@ -1,0 +1,65 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Dashboard</h1>
+      <p>Resumen del día de {{ negocio()?.nombre }}</p>
+    </div>
+    <button type="button" class="btn btn-outline" (click)="cargar()" [disabled]="cargando()">
+      <lucide-icon name="refresh-cw" [size]="16" />
+      Actualizar
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="error-banner">{{ error() }}</div>
+  }
+
+  @if (cargando() && !resumen()) {
+    <p class="muted">Cargando…</p>
+  } @else if (resumen()) {
+    <div class="kpis">
+      <div class="kpi" routerLink="/miembros">
+        <lucide-icon name="users" [size]="22" />
+        <div>
+          <span>Miembros activos</span>
+          <strong>{{ resumen()!.miembros_activos }}</strong>
+        </div>
+      </div>
+      <div class="kpi" routerLink="/asistencias">
+        <lucide-icon name="log-in" [size]="22" />
+        <div>
+          <span>Asistencias hoy</span>
+          <strong>{{ resumen()!.asistencias_hoy }}</strong>
+        </div>
+      </div>
+      <div class="kpi">
+        <lucide-icon name="activity" [size]="22" />
+        <div>
+          <span>Dentro ahora</span>
+          <strong>{{ resumen()!.ocupacion_actual }}</strong>
+        </div>
+      </div>
+      <div class="kpi" routerLink="/pagos">
+        <lucide-icon name="banknote" [size]="22" />
+        <div>
+          <span>Ingresos hoy</span>
+          <strong>{{ resumen()!.ingresos_hoy | currency:'COP':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+      <div class="kpi">
+        <lucide-icon name="trending-up" [size]="22" />
+        <div>
+          <span>Ingresos del mes</span>
+          <strong>{{ resumen()!.ingresos_mes | currency:'COP':'symbol':'1.0-0' }}</strong>
+        </div>
+      </div>
+      <div class="kpi" routerLink="/membresias">
+        <lucide-icon name="triangle-alert" [size]="22" />
+        <div>
+          <span>Vencen en 5 días</span>
+          <strong>{{ resumen()!.proximos_vencen_5d }}</strong>
+        </div>
+      </div>
+    </div>
+  }
+</section>

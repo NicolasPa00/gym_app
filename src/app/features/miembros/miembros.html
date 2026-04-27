@@ -1,0 +1,188 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Miembros</h1>
+      <p>{{ total() }} registros</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
+      <lucide-icon name="plus" [size]="16" /> Nuevo miembro
+    </button>
+  </header>
+
+  <div class="filters">
+    <div class="search">
+      <lucide-icon name="search" [size]="16" />
+      <input class="input" type="search" placeholder="Buscar por nombre, identificación, email…"
+             [ngModel]="busqueda()" (ngModelChange)="onBusquedaChange($event)" />
+    </div>
+    <select class="select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event); cargar()">
+      <option value="">Todos los estados</option>
+      <option value="ACTIVO">Activos</option>
+      <option value="SUSPENDIDO">Suspendidos</option>
+      <option value="MOROSO">Morosos</option>
+      <option value="INACTIVO">Inactivos</option>
+    </select>
+  </div>
+
+  <div class="card-table">
+    @if (cargando()) {
+      <p class="muted center">Cargando…</p>
+    } @else if (miembros().length === 0) {
+      <p class="muted center">No hay miembros para mostrar.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Miembro</th>
+            <th>QR</th>
+            <th>Contacto</th>
+            <th>Vencimiento</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of miembros(); track m.id_miembro) {
+            <tr>
+              <td>
+                <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
+                @if (m.num_identificacion) {<small>ID: {{ m.num_identificacion }}</small>}
+              </td>
+              <td><code class="qr">{{ m.codigo_qr }}</code></td>
+              <td>
+                <span>{{ m.email || '—' }}</span><br>
+                <small>{{ m.telefono || '—' }}</small>
+              </td>
+              <td>
+                @if (vencimientoMembresia(m); as v) {
+                  {{ v | date:'mediumDate' }}
+                } @else {
+                  <span class="muted">Sin membresía</span>
+                }
+              </td>
+              <td>
+                <span class="badge" [class.b-ok]="m.estado === 'ACTIVO'"
+                                    [class.b-warn]="m.estado === 'MOROSO'"
+                                    [class.b-off]="m.estado === 'INACTIVO' || m.estado === 'SUSPENDIDO'">
+                  {{ m.estado }}
+                </span>
+              </td>
+              <td class="actions">
+                @if (m.estado === 'ACTIVO') {
+                  <button class="btn btn-ghost" type="button" (click)="cambiarEstado(m, 'SUSPENDIDO')" title="Suspender">
+                    <lucide-icon name="pause" [size]="16" />
+                  </button>
+                } @else {
+                  <button class="btn btn-ghost" type="button" (click)="cambiarEstado(m, 'ACTIVO')" title="Activar">
+                    <lucide-icon name="play" [size]="16" />
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
+
+@if (modalAbierto()) {
+  <div class="modal" (click)="cerrarModal()">
+    <div class="modal__panel" (click)="$event.stopPropagation()">
+      <h2>Nuevo miembro</h2>
+      <div class="grid">
+        <label>
+          Primer nombre *
+          <input class="input" [ngModel]="form().primer_nombre"
+                 (ngModelChange)="actualizarCampo('primer_nombre', $event)" />
+        </label>
+        <label>
+          Primer apellido *
+          <input class="input" [ngModel]="form().primer_apellido"
+                 (ngModelChange)="actualizarCampo('primer_apellido', $event)" />
+        </label>
+        <label>
+          Identificación
+          <input class="input" [ngModel]="form().num_identificacion"
+                 (ngModelChange)="actualizarCampo('num_identificacion', $event)" />
+        </label>
+        <label>
+          Email
+          <input class="input" type="email" [ngModel]="form().email"
+                 (ngModelChange)="actualizarCampo('email', $event)" />
+        </label>
+        <label>
+          Teléfono
+          <input class="input" [ngModel]="form().telefono"
+                 (ngModelChange)="actualizarCampo('telefono', $event)" />
+        </label>
+        <label>
+          Fecha nacimiento
+          <input class="input" type="date" [ngModel]="form().fecha_nacimiento"
+                 (ngModelChange)="actualizarCampo('fecha_nacimiento', $event)" />
+        </label>
+        <label>
+          Sexo
+          <select class="select" [ngModel]="form().sexo"
+                  (ngModelChange)="actualizarCampo('sexo', $event)">
+            <option [ngValue]="null">—</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+            <option value="O">Otro</option>
+          </select>
+        </label>
+        <label>
+          Peso (kg)
+          <input class="input" type="number" min="0" step="0.1" [ngModel]="form().peso_kg"
+                 (ngModelChange)="actualizarCampo('peso_kg', $event)" />
+        </label>
+        <label>
+          Altura (cm)
+          <input class="input" type="number" min="0" step="0.5" [ngModel]="form().altura_cm"
+                 (ngModelChange)="actualizarCampo('altura_cm', $event)" />
+        </label>
+        <label class="full">
+          Dirección
+          <input class="input" [ngModel]="form().direccion"
+                 (ngModelChange)="actualizarCampo('direccion', $event)" />
+        </label>
+        <label>
+          Ciudad
+          <input class="input" [ngModel]="form().ciudad"
+                 (ngModelChange)="actualizarCampo('ciudad', $event)" />
+        </label>
+        <label class="full">
+          Contacto de emergencia
+          <input class="input" placeholder="Nombre" [ngModel]="form().contacto_emergencia_nombre"
+                 (ngModelChange)="actualizarCampo('contacto_emergencia_nombre', $event)" />
+        </label>
+        <label class="full">
+          Teléfono de emergencia
+          <input class="input" [ngModel]="form().contacto_emergencia_telefono"
+                 (ngModelChange)="actualizarCampo('contacto_emergencia_telefono', $event)" />
+        </label>
+        <label class="full">
+          Condiciones médicas
+          <textarea class="textarea" rows="2" [ngModel]="form().condiciones_medicas"
+                    (ngModelChange)="actualizarCampo('condiciones_medicas', $event)"></textarea>
+        </label>
+        <label class="full">
+          Alergias
+          <textarea class="textarea" rows="2" [ngModel]="form().alergias"
+                    (ngModelChange)="actualizarCampo('alergias', $event)"></textarea>
+        </label>
+      </div>
+
+      @if (errorForm()) {
+        <p class="error">{{ errorForm() }}</p>
+      }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="cerrarModal()" [disabled]="enviando()">Cancelar</button>
+        <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando…' : 'Crear miembro' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

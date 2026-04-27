@@ -1,0 +1,55 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Configuración</h1>
+      <p>Apariencia visual del gimnasio</p>
+    </div>
+  </header>
+
+  <article class="card">
+    <h3>Tema</h3>
+    <p class="muted">Elige cómo se ve la aplicación. La preferencia se guarda en este dispositivo.</p>
+    <div class="theme-toggles">
+      <button type="button" class="toggle" [class.active]="theme.theme() === 'light'" (click)="theme.set('light')">
+        <lucide-icon name="sun" [size]="18" /> Claro
+      </button>
+      <button type="button" class="toggle" [class.active]="theme.theme() === 'dark'" (click)="theme.set('dark')">
+        <lucide-icon name="moon" [size]="18" /> Oscuro
+      </button>
+      <button type="button" class="toggle" [class.active]="theme.theme() === 'system'" (click)="theme.set('system')">
+        <lucide-icon name="monitor" [size]="18" /> Sistema
+      </button>
+    </div>
+  </article>
+
+  <article class="card">
+    <h3>Paleta de colores</h3>
+    <p class="muted">Personaliza los colores del gimnasio. Se aplica para todos los usuarios del negocio.</p>
+
+    @if (cargando()) {
+      <p class="muted">Cargando paletas…</p>
+    } @else if (palette.paletas().length === 0) {
+      <p class="muted">No hay paletas configuradas en el sistema.</p>
+    } @else {
+      <div class="paletas">
+        @for (p of palette.paletas(); track p.id_paleta) {
+          <button class="paleta" type="button" (click)="seleccionar(p)"
+                  [class.active]="esActiva(p)" [disabled]="guardando() === p.id_paleta">
+            <div class="swatches">
+              @for (c of preview(p); track $index) {
+                <span [style.background]="c"></span>
+              }
+            </div>
+            <strong>{{ p.nombre }}</strong>
+            @if (p.descripcion) { <small>{{ p.descripcion }}</small> }
+            @if (esActiva(p)) { <span class="check"><lucide-icon name="check" [size]="14" /> Activa</span> }
+          </button>
+        }
+      </div>
+    }
+
+    @if (mensaje(); as m) {
+      <p class="msg" [class.ok]="m.tipo === 'ok'" [class.err]="m.tipo === 'err'">{{ m.texto }}</p>
+    }
+  </article>
+</section>

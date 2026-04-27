@@ -1,0 +1,89 @@
+<section class="page">
+  <header class="page__head">
+    <div>
+      <h1>Planes</h1>
+      <p>Catálogo de membresías disponibles</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
+      <lucide-icon name="plus" [size]="16" /> Nuevo plan
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <p class="muted">Cargando…</p>
+  } @else if (planes().length === 0) {
+    <div class="empty">
+      <lucide-icon name="badge-percent" [size]="44" />
+      <h3>No hay planes creados</h3>
+      <p>Crea el primer plan para empezar a vender membresías.</p>
+    </div>
+  } @else {
+    <div class="planes">
+      @for (p of planes(); track p.id_plan) {
+        <article class="plan-card" [class.plan-card--off]="p.estado !== 'A'">
+          <header>
+            <h3>{{ p.nombre }}</h3>
+            <span class="precio">{{ p.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+          </header>
+          <p class="dur">{{ p.duracion_meses }} {{ p.duracion_meses === 1 ? 'mes' : 'meses' }}</p>
+          @if (p.descripcion) { <p class="desc">{{ p.descripcion }}</p> }
+          @if (p.beneficios) { <pre class="beneficios">{{ p.beneficios }}</pre> }
+          <footer>
+            <button class="btn btn-outline" type="button" (click)="abrirEdicion(p)">
+              <lucide-icon name="pencil" [size]="14" /> Editar
+            </button>
+            @if (p.estado === 'A') {
+              <button class="btn btn-ghost" type="button" (click)="inactivar(p)">Inactivar</button>
+            } @else {
+              <span class="badge-off">Inactivo</span>
+            }
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (modalAbierto()) {
+  <div class="modal" (click)="cerrarModal()">
+    <div class="modal__panel" (click)="$event.stopPropagation()">
+      <h2>{{ editandoId() ? 'Editar plan' : 'Nuevo plan' }}</h2>
+      <label>
+        Nombre *
+        <input class="input" [ngModel]="form().nombre"
+               (ngModelChange)="actualizarCampo('nombre', $event)" />
+      </label>
+      <div class="row-2">
+        <label>
+          Precio (COP) *
+          <input class="input" type="number" min="0" step="1000"
+                 [ngModel]="form().precio" (ngModelChange)="actualizarCampo('precio', $event)" />
+        </label>
+        <label>
+          Duración (meses) *
+          <input class="input" type="number" min="1" max="60"
+                 [ngModel]="form().duracion_meses" (ngModelChange)="actualizarCampo('duracion_meses', $event)" />
+        </label>
+      </div>
+      <label>
+        Descripción
+        <textarea class="textarea" rows="2" [ngModel]="form().descripcion"
+                  (ngModelChange)="actualizarCampo('descripcion', $event)"></textarea>
+      </label>
+      <label>
+        Beneficios (uno por línea)
+        <textarea class="textarea" rows="4" [ngModel]="form().beneficios"
+                  (ngModelChange)="actualizarCampo('beneficios', $event)"></textarea>
+      </label>
+
+      @if (errorForm()) { <p class="error">{{ errorForm() }}</p> }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="cerrarModal()" [disabled]="enviando()">Cancelar</button>
+        <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando…' : editandoId() ? 'Guardar cambios' : 'Crear plan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

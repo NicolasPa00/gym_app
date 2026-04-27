@@ -1,0 +1,45 @@
+.page { padding: 1.5rem; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+.page__head h1 { margin: 0; font-size: 1.4rem; }
+.page__head p  { margin: .25rem 0 0; color: var(--color-text-muted); font-size: .85rem; }
+.muted { color: var(--color-text-muted); }
+
+.card { display: flex; flex-direction: column; gap: .75rem;
+  h3 { margin: 0; font-size: 1.05rem; }
+  p { margin: 0; }
+}
+
+.theme-toggles { display: flex; gap: .5rem; flex-wrap: wrap; }
+.theme-toggles .toggle {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .55rem .9rem; background: var(--color-bg-muted);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  cursor: pointer; font-size: .9rem; font-weight: 500; color: var(--color-text-secondary);
+  font-family: inherit;
+  &:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  &.active { background: var(--color-primary); color: var(--color-on-primary); border-color: var(--color-primary); }
+}
+
+.paletas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .75rem; }
+.paleta {
+  display: flex; flex-direction: column; gap: .35rem;
+  padding: .85rem; background: var(--color-surface);
+  border: 2px solid var(--color-border); border-radius: var(--radius-md);
+  cursor: pointer; text-align: left; font-family: inherit; font-size: .85rem;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+  position: relative;
+  &:hover:not(:disabled):not(.active) { border-color: var(--color-primary); transform: translateY(-1px); }
+  &.active { border-color: var(--color-primary); background: var(--color-bg-muted); }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+  strong { color: var(--color-text-primary); }
+  small { color: var(--color-text-muted); font-size: .72rem; }
+  .check { position: absolute; top: .5rem; right: .5rem; display: inline-flex; align-items: center; gap: .15rem;
+    color: var(--color-primary); font-size: .7rem; font-weight: 600; }
+}
+.swatches { display: flex; gap: .15rem; height: 28px; border-radius: var(--radius-sm); overflow: hidden;
+  span { flex: 1; }
+}
+
+.msg { margin: 0; padding: .55rem .75rem; border-radius: var(--radius-md); font-size: .85rem;
+  &.ok { background: var(--color-success-bg); color: var(--color-success); }
+  &.err { background: var(--color-error-bg); color: var(--color-error); }
+}
