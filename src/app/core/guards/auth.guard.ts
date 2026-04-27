@@ -58,6 +58,26 @@ export const permissionGuard: CanActivateChildFn = (childRoute, state) => {
   return router.parseUrl('/sin-acceso');
 };
 
+/**
+ * Bloquea el acceso a rutas de funcionalidad si el negocio no tiene plan activo.
+ * Permite siempre: dashboard, sin-acceso, sin-plan.
+ */
+export const planGuard: CanActivateFn = (_route, state) => {
+  const auth      = inject(AuthService);
+  const router    = inject(Router);
+  const platformId = inject(PLATFORM_ID);
+
+  if (!isPlatformBrowser(platformId)) return true;
+
+  const path = state.url.split('?')[0].replace(/^\//, '');
+  if (!path || path === 'dashboard' || path === 'sin-acceso' || path === 'sin-plan') {
+    return true;
+  }
+
+  if (auth.planActivo()) return true;
+  return router.parseUrl('/sin-plan');
+};
+
 async function refreshFromStored(auth: AuthService): Promise<boolean> {
   const t = auth.getAccessToken();
   if (!t) return false;

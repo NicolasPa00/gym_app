@@ -1,4 +1,11 @@
 <section class="page">
+  @if (!planActivo()) {
+    <div class="plan-banner">
+      <lucide-icon name="credit-card" [size]="18" aria-hidden="true" />
+      <span>Tu negocio no tiene un plan activo. Algunas funcionalidades están bloqueadas.</span>
+    </div>
+  }
+
   <header class="page__head">
     <div>
       <h1>Dashboard</h1>

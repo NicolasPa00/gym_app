@@ -11,14 +11,14 @@ import {
   Activity, TriangleAlert, BadgeCheck, BadgePercent, Banknote, Check, Dumbbell,
   FingerprintPattern, IdCard, LayoutDashboard, LogIn, LogOut, Monitor, Moon,
   Package, Pause, Pencil, Play, Plus, RefreshCw, ScanLine, Search, Settings,
-  ShoppingCart, Sun, TrendingUp, Users, X,
+  ShoppingCart, Sun, TrendingUp, Users, X, CreditCard, ArrowLeft,
 } from 'lucide-angular';
 
 const icons = {
   Activity, TriangleAlert, BadgeCheck, BadgePercent, Banknote, Check, Dumbbell,
   FingerprintPattern, IdCard, LayoutDashboard, LogIn, LogOut, Monitor, Moon,
   Package, Pause, Pencil, Play, Plus, RefreshCw, ScanLine, Search, Settings,
-  ShoppingCart, Sun, TrendingUp, Users, X,
+  ShoppingCart, Sun, TrendingUp, Users, X, CreditCard, ArrowLeft,
 };
 
 export const appConfig: ApplicationConfig = {

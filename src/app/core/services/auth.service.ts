@@ -32,6 +32,7 @@ export class AuthService {
   private readonly _negocioIdx = signal<number>(0);
 
   readonly isAuthenticated = computed(() => this.session() !== null);
+  readonly planActivo      = computed(() => this.session()?.plan_activo ?? false);
   readonly usuario   = computed(() => this.session()?.usuario ?? null);
   readonly negocios  = computed(() => this.session()?.negocios ?? []);
   readonly negocio   = computed<NegocioGym | null>(() => {

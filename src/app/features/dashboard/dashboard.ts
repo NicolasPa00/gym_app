@@ -23,6 +23,7 @@ export class DashboardComponent implements OnInit {
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
   readonly negocio = computed(() => this.auth.negocio());
+  readonly planActivo = computed(() => this.auth.planActivo());
 
   ngOnInit(): void { this.cargar(); }
 

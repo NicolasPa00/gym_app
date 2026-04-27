@@ -1,4 +1,16 @@
 .page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+.plan-banner {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+  padding: .75rem 1rem;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+  font-size: .875rem;
+  font-weight: 500;
+}
 .page__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
   h1 { margin: 0; font-size: 1.5rem; }
   p  { margin: .25rem 0 0; color: var(--color-text-muted); font-size: .9rem; }

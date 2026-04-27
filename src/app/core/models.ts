@@ -49,6 +49,7 @@ export interface SesionGym {
   roles: { id_rol: number; descripcion: string }[];
   permisos_vista?: PermisoVista[];
   roles_globales: { id_rol: number; descripcion: string }[];
+  plan_activo?: boolean;
 }
 
 // ── Entidades del dominio gym ──
