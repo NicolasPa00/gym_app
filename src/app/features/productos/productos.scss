@@ -27,7 +27,7 @@
   td small { display: block; }
   td.actions { text-align: right; white-space: nowrap; }
   tr:last-child td { border-bottom: none; }
-  tr.bajo-stock { background: rgba(239, 108, 0, .08); }
+  tr.bajo-stock { background: color-mix(in srgb, var(--color-warning) 8%, transparent); }
   code { font-family: ui-monospace, monospace; font-size: .8rem; padding: .1rem .35rem; background: var(--color-bg-muted); border-radius: .25rem; }
 }
 

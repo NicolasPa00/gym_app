@@ -7,22 +7,6 @@
   </header>
 
   <article class="card">
-    <h3>Tema</h3>
-    <p class="muted">Elige cómo se ve la aplicación. La preferencia se guarda en este dispositivo.</p>
-    <div class="theme-toggles">
-      <button type="button" class="toggle" [class.active]="theme.theme() === 'light'" (click)="theme.set('light')">
-        <lucide-icon name="sun" [size]="18" /> Claro
-      </button>
-      <button type="button" class="toggle" [class.active]="theme.theme() === 'dark'" (click)="theme.set('dark')">
-        <lucide-icon name="moon" [size]="18" /> Oscuro
-      </button>
-      <button type="button" class="toggle" [class.active]="theme.theme() === 'system'" (click)="theme.set('system')">
-        <lucide-icon name="monitor" [size]="18" /> Sistema
-      </button>
-    </div>
-  </article>
-
-  <article class="card">
     <h3>Paleta de colores</h3>
     <p class="muted">Personaliza los colores del gimnasio. Se aplica para todos los usuarios del negocio.</p>
 

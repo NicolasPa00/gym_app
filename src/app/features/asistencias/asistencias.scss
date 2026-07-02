@@ -18,7 +18,7 @@
 
 .msg { margin: .5rem 0 0; padding: .55rem .75rem; border-radius: var(--radius-md); font-size: .9rem; font-weight: 500;
   &.ok { background: var(--color-success-bg); color: var(--color-success); }
-  &.warn { background: #fef3c7; color: #92400e; }
+  &.warn { background: var(--color-warning-bg); color: var(--color-warning); }
   &.err { background: var(--color-error-bg); color: var(--color-error); }
 }
 
@@ -44,7 +44,7 @@
   th { font-size: .72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; }
   td small { display: block; }
   td.actions { text-align: right; }
-  tr.dentro { background: rgba(46, 125, 50, 0.05); }
+  tr.dentro { background: color-mix(in srgb, var(--color-success) 6%, transparent); }
   tr:last-child td { border-bottom: none; }
   .metodo { font-size: .7rem; font-weight: 600; padding: .15rem .45rem; border-radius: 999px;
     background: var(--color-bg-muted); color: var(--color-text-secondary); }

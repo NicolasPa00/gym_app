@@ -3,7 +3,6 @@ import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
 import { PaletteService, PaletaColor } from '../../core/theme/palette.service';
-import { ThemeService } from '../../core/theme/theme.service';
 
 @Component({
   selector: 'gym-configuracion',
@@ -16,7 +15,6 @@ import { ThemeService } from '../../core/theme/theme.service';
 export class ConfiguracionComponent implements OnInit {
   private readonly auth = inject(AuthService);
   readonly palette = inject(PaletteService);
-  readonly theme = inject(ThemeService);
 
   readonly negocio = computed(() => this.auth.negocio());
   readonly cargando = signal(false);
