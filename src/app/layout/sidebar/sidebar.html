@@ -19,12 +19,9 @@
   </nav>
 
   <footer class="sidebar__footer">
-    <div class="user">
-      <strong>{{ auth.usuario()?.nombre_completo }}</strong>
-      <span>{{ auth.usuario()?.email }}</span>
-    </div>
-    <button type="button" class="logout" (click)="logout()" title="Cerrar sesión">
+    <button type="button" class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
       <lucide-icon name="log-out" [size]="18" />
+      <span>Cerrar sesión</span>
     </button>
   </footer>
 </aside>
