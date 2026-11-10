@@ -5,7 +5,7 @@
       <p>{{ total() }} registros</p>
     </div>
     <button class="btn btn-primary" type="button" (click)="abrirAsignar()">
-      <lucide-icon name="plus" [size]="16" /> Asignar / renovar
+      <lucide-icon name="plus" [size]="16" /> Asignar o renovar
     </button>
   </header>
 
@@ -41,20 +41,20 @@
             <tr>
               <td>
                 <strong>{{ m.miembro?.primer_nombre }} {{ m.miembro?.primer_apellido }}</strong>
-                <small class="muted">QR {{ m.miembro?.codigo_qr }}</small>
+                <small>{{ m.miembro?.codigo_qr }}</small>
               </td>
               <td>{{ m.plan?.nombre || '—' }}</td>
-              <td>
-                {{ m.fecha_inicio | date:'mediumDate' }}<br>
-                <small>→ {{ m.fecha_fin | date:'mediumDate' }}</small>
+              <td class="vigencia">
+                {{ m.fecha_inicio | date:'mediumDate' }}
+                <small>hasta {{ m.fecha_fin | date:'mediumDate' }}</small>
               </td>
-              <td>{{ m.precio_pagado | currency:'COP':'symbol':'1.0-0' }}</td>
+              <td>{{ m.precio_pagado | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
               <td>
                 <span class="badge"
                       [class.b-ok]="m.estado === 'ACTIVA'"
                       [class.b-warn]="m.estado === 'PAUSADA'"
                       [class.b-off]="m.estado === 'VENCIDA' || m.estado === 'CANCELADA'">
-                  {{ m.estado }}
+                  {{ m.estado | etiqueta }}
                 </span>
               </td>
               <td class="actions">
@@ -82,7 +82,7 @@
 @if (modalAbierto()) {
   <div class="modal" (click)="cerrarModal()">
     <div class="modal__panel" (click)="$event.stopPropagation()">
-      <h2>Asignar / renovar membresía</h2>
+      <h2>Asignar o renovar membresía</h2>
       <p class="hint">Si el miembro ya tiene una membresía vigente, se renueva sumando la duración del plan.</p>
 
       <label class="autocomplete">
@@ -107,7 +107,7 @@
           <option [ngValue]="null">— Selecciona un plan —</option>
           @for (p of planes(); track p.id_plan) {
             <option [ngValue]="p.id_plan">
-              {{ p.nombre }} · {{ p.duracion_meses }}m · {{ p.precio | currency:'COP':'symbol':'1.0-0' }}
+              {{ p.nombre }} · {{ p.duracion_meses }}m · {{ p.precio | currency:'COP':'symbol-narrow':'1.0-0' }}
             </option>
           }
         </select>

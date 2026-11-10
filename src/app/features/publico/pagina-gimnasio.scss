@@ -1,0 +1,1051 @@
+// Página pública del gimnasio — «Ficha del negocio» (elegida por el dueño, 2026-11-09).
+//
+// LA FORMA es de EscalApp: la misma familia que el menú digital y Celulares (tarjetas blancas
+// sobre un fondo apenas teñido, Inter, píldoras, radio 16). LOS COLORES son del gimnasio: todo
+// sale de `--c` (su color, ya oscurecido para que el blanco encima se lea) con `color-mix`, así
+// que un gimnasio rojo se ve rojo y uno verde, verde. Sin color propio, `--c` es el violeta de
+// EscalApp. El verde de «abierto» y «al mes» es semántico y no cambia con el gimnasio.
+//
+// Cinco tamaños: --t-1 (el nombre), --t-2 (títulos de sección), --t-precio (precio del plan),
+// --t-b (texto, 16 px) y --t-s (notas, 14 px).
+
+:host {
+  --fondo: color-mix(in srgb, var(--c) 6%, #f6f6f8);
+  --superficie: #ffffff;
+  --tono: color-mix(in srgb, var(--c) 5%, #f8f8fa);
+  --tinta: color-mix(in srgb, var(--c) 18%, #14141b);
+  --tinta-2: color-mix(in srgb, var(--c) 12%, #4a4a56);
+  --gris: color-mix(in srgb, var(--c) 10%, #64646f);
+  --borde: color-mix(in srgb, var(--c) 12%, #e4e4ea);
+  --oscuro: color-mix(in srgb, var(--c) 35%, #111117);
+  --exito: #17734f;
+  --exito-fondo: #e6f3ed;
+
+  --radio: 16px;
+  --sombra: 0 1px 3px rgb(20 20 30 / 0.06), 0 6px 20px rgb(20 20 30 / 0.05);
+  --sombra-alta: 0 2px 6px rgb(20 20 30 / 0.06), 0 14px 32px rgb(20 20 30 / 0.09);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ancho: 1200px;
+  --margen: 16px;
+
+  --t-1: clamp(1.75rem, 3.4vw, 2.5rem);
+  --t-2: 1.5rem;
+  --t-precio: 2rem;
+  --t-b: 1rem;
+  --t-s: 0.875rem;
+
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--font-family);
+  font-size: var(--t-b);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+
+  ::selection {
+    background: color-mix(in srgb, var(--c) 22%, transparent);
+  }
+}
+
+@media (min-width: 768px) {
+  :host {
+    --margen: 32px;
+  }
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--c) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.marco {
+  width: 100%;
+  max-width: calc(var(--ancho) + 2 * var(--margen));
+  margin-inline: auto;
+  padding-inline: var(--margen);
+}
+
+// ── Botones ──
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  font-size: var(--t-b);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.btn--c {
+  background: var(--c);
+  color: #ffffff;
+}
+
+.btn--borde {
+  background: var(--superficie);
+  color: var(--tinta);
+  box-shadow: inset 0 0 0 1.5px var(--borde);
+}
+
+.btn--claro {
+  background: #ffffff;
+  color: var(--oscuro);
+}
+
+@media (hover: hover) {
+  .btn--c:hover {
+    background: color-mix(in srgb, var(--c) 86%, #000000);
+  }
+  .btn--borde:hover {
+    background: var(--tono);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 30%, var(--borde));
+  }
+  .btn--claro:hover {
+    background: color-mix(in srgb, var(--c) 8%, #ffffff);
+  }
+}
+
+// ── Portada y ficha ──
+.cabecera {
+  padding-top: 16px;
+}
+
+@media (min-width: 768px) {
+  .cabecera {
+    padding-top: 24px;
+  }
+}
+
+.portada {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radio);
+  background: var(--oscuro);
+  color: color-mix(in srgb, #ffffff 30%, var(--oscuro));
+
+  // Absoluta: dentro de una rejilla, `height: 100%` de una imagen no siempre toma el alto
+  // de la caja y la foto se agrandaba hasta enseñar solo la pared.
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 65%;
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .portada {
+    aspect-ratio: 1200 / 340;
+  }
+}
+
+.ficha {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  margin: -28px 12px 0;
+  padding: 20px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+
+  &__logo {
+    width: 72px;
+    height: 72px;
+    margin-top: -56px;
+    border-radius: 18px;
+    object-fit: cover;
+    background: var(--superficie);
+    box-shadow: 0 0 0 4px var(--superficie);
+
+    &--iniciales {
+      display: grid;
+      place-items: center;
+      background: var(--c);
+      color: #ffffff;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+  }
+
+  &__texto {
+    min-width: 0;
+  }
+
+  h1 {
+    font-size: var(--t-1);
+    font-weight: 800;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  &__que {
+    margin: 4px 0 0;
+    color: var(--tinta-2);
+  }
+
+  &__datos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 10px 0 0;
+    font-size: var(--t-s);
+    color: var(--tinta-2);
+
+    strong {
+      color: var(--tinta);
+    }
+  }
+
+  &__acciones {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+    gap: 10px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ficha {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px;
+    margin: -64px 32px 0;
+    padding: 28px 32px;
+
+    &__logo {
+      width: 88px;
+      height: 88px;
+      margin-top: 0;
+      box-shadow: none;
+    }
+
+    &__acciones {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    &__logo--iniciales {
+      font-size: 1.75rem;
+    }
+  }
+}
+
+// En tableta la ficha no cabe en una fila: los botones bajan.
+@media (min-width: 768px) and (max-width: 1080px) {
+  .ficha {
+    grid-template-columns: auto minmax(0, 1fr);
+
+    &__acciones {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.abierto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--exito);
+
+  &::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &--no {
+    color: var(--tinta-2);
+
+    &::before {
+      background: var(--gris);
+    }
+  }
+}
+
+// ── Índice ──
+.indice {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-top: 20px;
+  background: color-mix(in srgb, var(--fondo) 94%, transparent);
+
+  &__fila {
+    display: flex;
+    gap: 4px;
+    padding-block: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  a {
+    flex: none;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: var(--t-s);
+    font-weight: 600;
+    color: var(--tinta-2);
+    text-decoration: none;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+
+    &[aria-current='true'] {
+      background: var(--oscuro);
+      color: #ffffff;
+    }
+  }
+}
+
+@media (max-width: 599px) {
+  .indice__resto {
+    display: none;
+  }
+
+  .indice a {
+    padding-inline: 11px;
+  }
+}
+
+@media (hover: hover) {
+  .indice a:not([aria-current='true']):hover {
+    background: var(--superficie);
+    color: var(--tinta);
+  }
+}
+
+// ── Secciones ──
+[data-seccion] {
+  scroll-margin-top: 72px;
+}
+
+h2 {
+  font-size: var(--t-2);
+  font-weight: 700;
+}
+
+.bajada {
+  margin: 4px 0 0;
+  font-size: var(--t-b);
+  color: var(--tinta-2);
+}
+
+// ── Planes: tarjetas a todo el ancho ──
+.planes {
+  padding-top: 16px;
+
+  &__lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: 16px;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 24px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  transition:
+    transform 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+
+  &--dest {
+    box-shadow:
+      inset 0 0 0 2px var(--c),
+      var(--sombra);
+  }
+
+  &__marca {
+    position: absolute;
+    top: -11px;
+    left: 24px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--c);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  &__desc {
+    margin: 4px 0 0;
+    font-size: var(--t-s);
+    color: var(--tinta-2);
+  }
+
+  &__precio {
+    margin: 18px 0 0;
+    font-size: var(--t-precio);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__por {
+    margin: 6px 0 0;
+    font-size: var(--t-s);
+    color: var(--gris);
+
+    b {
+      font-weight: 600;
+      color: var(--exito);
+    }
+  }
+
+  &__ahorro {
+    margin: 4px 0 0;
+    font-size: var(--t-s);
+    font-weight: 600;
+    color: var(--c);
+  }
+
+  &__incluye {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    flex: 1;
+    margin: 18px 0 22px;
+    padding: 18px 0 0;
+    border-top: 1px solid var(--borde);
+    list-style: none;
+    font-size: var(--t-b);
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    lucide-icon {
+      flex-shrink: 0;
+      margin-top: 3px;
+      color: var(--exito);
+    }
+  }
+
+  &__relleno {
+    flex: 1;
+    min-height: 22px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (hover: hover) {
+  .plan:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-alta);
+  }
+  .plan--dest:hover {
+    box-shadow:
+      inset 0 0 0 2px var(--c),
+      var(--sombra-alta);
+  }
+}
+
+// ── Cuerpo en dos columnas ──
+.cuerpo {
+  display: grid;
+  gap: 24px;
+  padding-top: 40px;
+  padding-bottom: 64px;
+}
+
+@media (min-width: 980px) {
+  .cuerpo {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: 32px;
+    padding-top: 56px;
+  }
+}
+
+.principal {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.caja {
+  min-width: 0;
+  padding: 24px;
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+
+  &__texto {
+    max-width: 68ch;
+    margin: 10px 0 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .caja:not(.caja--lado) {
+    padding: 32px;
+  }
+}
+
+.servicios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 10px 20px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: var(--t-b);
+  }
+
+  lucide-icon {
+    flex-shrink: 0;
+    color: var(--exito);
+  }
+}
+
+// ── Tienda ──
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 4px;
+
+  button {
+    padding: 7px 13px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--tono);
+    color: var(--tinta-2);
+    font: inherit;
+    font-size: var(--t-s);
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background-color 160ms ease,
+      transform 140ms var(--ease-out);
+
+    &:active {
+      transform: scale(0.97);
+    }
+
+    &[aria-pressed='true'] {
+      background: var(--oscuro);
+      color: #ffffff;
+    }
+  }
+}
+
+@media (hover: hover) {
+  .filtros button:not([aria-pressed='true']):hover {
+    background: color-mix(in srgb, var(--c) 10%, #ffffff);
+    color: var(--tinta);
+  }
+}
+
+.productos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+  gap: 0 24px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prod {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--borde);
+
+  &__foto {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--tono);
+    color: var(--gris);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  h3 {
+    font-size: var(--t-b);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  &__desc {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-s);
+    line-height: 1.35;
+    color: var(--gris);
+  }
+
+  &__precio {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-b);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__pedir {
+    padding: 10px 4px;
+    font-size: var(--t-s);
+    font-weight: 700;
+    color: var(--c);
+    text-decoration: none;
+  }
+
+  &__agotado {
+    font-size: var(--t-s);
+    font-weight: 600;
+    color: var(--gris);
+  }
+
+  &--agotado .prod__foto img {
+    filter: grayscale(1);
+    opacity: 0.5;
+  }
+}
+
+@media (hover: hover) {
+  .prod__pedir:hover {
+    text-decoration: underline;
+  }
+}
+
+// ── Columna lateral ──
+.lateral {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  scroll-margin-top: 72px;
+
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  &__texto {
+    margin: 8px 0 0;
+    font-size: var(--t-b);
+  }
+}
+
+@media (min-width: 980px) {
+  .lateral {
+    position: sticky;
+    top: 72px;
+  }
+}
+
+.horario {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-s);
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+
+    > span {
+      color: var(--tinta-2);
+    }
+
+    strong {
+      font-weight: 600;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  li.horario__hoy > span {
+    color: var(--tinta);
+    font-weight: 700;
+  }
+}
+
+.enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: var(--t-b);
+  font-weight: 600;
+  color: var(--c);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .enlace:hover {
+    text-decoration: underline;
+  }
+}
+
+.contacto {
+  background: var(--oscuro);
+  color: #ffffff;
+
+  .lateral__texto {
+    color: rgb(255 255 255 / 0.9);
+  }
+
+  .btn {
+    width: 100%;
+    margin-top: 14px;
+  }
+}
+
+// ── Pie: primero el cierre del gimnasio, después la franja de EscalApp ──
+.pie {
+  background: var(--superficie);
+}
+
+.pie__gimnasio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding-block: 28px;
+}
+
+.pie__marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.pie__logo {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+
+  &--iniciales {
+    display: grid;
+    place-items: center;
+    background: var(--c);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 800;
+  }
+}
+
+.pie__nombre {
+  margin: 0;
+  font-weight: 700;
+}
+
+.pie__dato {
+  margin: 0;
+  font-size: var(--t-s);
+  color: var(--gris);
+}
+
+.pie__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: var(--t-s);
+  font-weight: 600;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    color: var(--tinta-2);
+    text-decoration: none;
+  }
+}
+
+@media (hover: hover) {
+  .pie__enlaces a:hover {
+    color: var(--c);
+  }
+}
+
+.pie__creditos {
+  flex-basis: 100%;
+  font-size: var(--t-s);
+  color: var(--gris);
+
+  summary {
+    width: fit-content;
+    cursor: pointer;
+  }
+
+  p {
+    max-width: 90ch;
+    margin: 8px 0 0;
+  }
+}
+
+// La franja de EscalApp: igual que en el menú digital, el portal de reservas y Celulares.
+.escalapp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 16px;
+  padding: 18px var(--margen) calc(18px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--borde);
+  // Blanco, no el fondo teñido: `--c` está calculado para leerse sobre blanco (4,5:1).
+  background: var(--superficie);
+  text-align: center;
+
+  &__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 6px 7px 6px 18px;
+    border: 1.5px solid var(--c);
+    border-radius: 999px;
+    color: var(--c);
+    font-size: var(--t-s);
+    font-weight: 600;
+    text-decoration: none;
+    touch-action: manipulation;
+    transition:
+      transform 140ms var(--ease-out),
+      background-color 160ms ease;
+
+    strong {
+      font-weight: 800;
+    }
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  &__icono {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--c);
+    color: #ffffff;
+    transition: transform 200ms var(--ease-out);
+  }
+
+  &__sep {
+    width: 1px;
+    height: 20px;
+    background: var(--borde);
+  }
+
+  &__copy {
+    font-size: 0.75rem;
+    color: var(--gris);
+  }
+}
+
+@media (hover: hover) {
+  .escalapp__cta:hover {
+    background: color-mix(in srgb, var(--c) 7%, transparent);
+  }
+  .escalapp__cta:hover .escalapp__icono {
+    transform: translate(2px, -2px);
+  }
+}
+
+@media (max-width: 480px) {
+  .escalapp__sep {
+    display: none;
+  }
+}
+
+// ── WhatsApp flotante (solo celular y tableta) ──
+.flotante {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1f8f52;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.2);
+  transition: transform 140ms var(--ease-out);
+
+  &:active {
+    transform: scale(0.94);
+  }
+}
+
+@media (min-width: 980px) {
+  .flotante {
+    display: none;
+  }
+}
+
+// En el celular el flotante no debe tapar la franja de EscalApp.
+@media (max-width: 979px) {
+  .escalapp {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+// ── Estados de carga y no disponible ──
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 2rem;
+  text-align: center;
+  color: var(--tinta-2);
+
+  h1 {
+    font-size: var(--t-2);
+    color: var(--tinta);
+  }
+
+  p {
+    max-width: 40ch;
+    margin: 0;
+  }
+
+  &__pulso {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--borde);
+    animation: pulso 1.1s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes pulso {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Aparición suave al llegar (RevelarDirective pone `rv` solo si puede quitarla). Escalona 70 ms.
+.rv {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 500ms var(--ease-out) calc(var(--rv-i, 0) * 70ms),
+    transform 600ms var(--ease-out) calc(var(--rv-i, 0) * 70ms);
+}
+
+.rv-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .btn,
+  .plan,
+  .escalapp__icono {
+    transition: none;
+  }
+}

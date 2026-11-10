@@ -1,0 +1,258 @@
+@if (cargando()) {
+  <div class="estado" aria-busy="true">
+    <span class="estado__pulso" aria-hidden="true"></span>
+    <p>Cargando…</p>
+  </div>
+} @else if (noDisponible() || !info()) {
+  <div class="estado">
+    <lucide-icon name="barbell" [size]="40" aria-hidden="true" />
+    <h1>Esta página no está disponible</h1>
+    <p>Puede que el gimnasio todavía no la haya publicado o que el enlace esté mal escrito.</p>
+  </div>
+} @else {
+  @let g = info()!;
+
+  <!-- Portada y ficha del gimnasio -->
+  <header class="marco cabecera">
+    <figure class="portada" [class.portada--sin]="!portada()">
+      @if (portada(); as src) {
+        <img [src]="src" alt="" fetchpriority="high" />
+      } @else {
+        <lucide-icon name="barbell" [size]="72" aria-hidden="true" />
+      }
+    </figure>
+
+    <section class="ficha" aria-labelledby="titulo">
+      @if (logo(); as src) {
+        <img class="ficha__logo" [src]="src" alt="" width="88" height="88" />
+      } @else {
+        <span class="ficha__logo ficha__logo--iniciales" aria-hidden="true">{{ iniciales() }}</span>
+      }
+      <div class="ficha__texto">
+        <h1 id="titulo">{{ g.nombre }}</h1>
+        <p class="ficha__que">
+          Gimnasio{{ g.direccion ? ' en ' + g.direccion : '' }}@if (g.frase) {<span class="ficha__frase"> · {{ g.frase }}</span>}
+        </p>
+        <p class="ficha__datos">
+          @if (estado(); as e) {
+            <span class="abierto" [class.abierto--no]="!e.abierto">{{ e.texto }}</span>
+          }
+          @if (desdeAlMes(); as desde) {
+            <span>Planes desde <strong>{{ desde | currency: g.moneda : 'symbol-narrow' : '1.0-0' }} al mes</strong></span>
+          }
+        </p>
+      </div>
+      <div class="ficha__acciones">
+        @if (whatsapp(mensajeGeneral()); as wa) {
+          <a class="btn btn--c" [href]="wa" target="_blank" rel="noopener">
+            <lucide-icon name="whatsapp-logo" [size]="20" aria-hidden="true" /> Quiero inscribirme
+          </a>
+        }
+        @if (g.mapa_url) {
+          <a class="btn btn--borde" [href]="g.mapa_url" target="_blank" rel="noopener">
+            <lucide-icon name="map-pin" [size]="18" aria-hidden="true" /> Cómo llegar
+          </a>
+        }
+      </div>
+    </section>
+  </header>
+
+  <!-- Índice de la página: se queda arriba al bajar y marca la sección que se está leyendo. -->
+  <nav class="indice" aria-label="En esta página">
+    <div class="marco indice__fila">
+      @for (s of secciones(); track s.id) {
+        <a [href]="enlaceSeccion(s.id)" (click)="irA($event, s.id)" [attr.aria-current]="seccionActiva() === s.id ? 'true' : null">{{ s.nombre }}@if (s.resto) {<span class="indice__resto">{{ s.resto }}</span>}</a>
+      }
+    </div>
+  </nav>
+
+  <main>
+    <!-- Planes: tarjetas a todo el ancho -->
+    @if (planes().length) {
+      <section class="marco planes" id="planes" aria-labelledby="titulo-planes" data-seccion>
+        <h2 id="titulo-planes">Planes</h2>
+        <p class="bajada">Precios en {{ nombreMoneda() }}. Te inscribes por WhatsApp.</p>
+        <ul class="planes__lista">
+          @for (p of planes(); track p.id_plan) {
+            <li class="plan" [class.plan--dest]="p.destacado">
+              @if (p.destacado && p.ahorro) {
+                <span class="plan__marca">Ahorras {{ p.ahorro | currency: g.moneda : 'symbol-narrow' : '1.0-0' }}</span>
+              }
+              <h3>{{ p.nombre }}</h3>
+              @if (p.descripcion) { <p class="plan__desc">{{ p.descripcion }}</p> }
+              <p class="plan__precio">{{ p.precio | currency: g.moneda : 'symbol-narrow' : '1.0-0' }}</p>
+              <p class="plan__por">
+                {{ p.duracion }}
+                @if (p.porMes) {
+                  · <b>{{ p.porMes | currency: g.moneda : 'symbol-narrow' : '1.0-0' }} al mes</b>
+                }
+              </p>
+              @if (p.ahorro && !p.destacado) {
+                <p class="plan__ahorro">Ahorras {{ p.ahorro | currency: g.moneda : 'symbol-narrow' : '1.0-0' }}</p>
+              }
+              @if (p.beneficios.length) {
+                <ul class="plan__incluye" [attr.aria-label]="'Qué incluye ' + p.nombre">
+                  @for (b of p.beneficios; track $index) {
+                    <li><lucide-icon name="check" [size]="16" aria-hidden="true" />{{ b }}</li>
+                  }
+                </ul>
+              } @else {
+                <span class="plan__relleno"></span>
+              }
+              @if (whatsapp(mensajePlan(p)); as wa) {
+                <a class="btn" [class.btn--c]="p.destacado" [class.btn--borde]="!p.destacado" [href]="wa"
+                   target="_blank" rel="noopener"
+                   [attr.aria-label]="'Quiero el plan ' + p.nombre + ', escribir por WhatsApp'">Lo quiero</a>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <div class="marco cuerpo">
+      <div class="principal">
+        @if (g.descripcion || g.servicios.length) {
+          <section class="caja" id="gimnasio" aria-labelledby="titulo-sobre" data-seccion revelar>
+            <h2 id="titulo-sobre">El gimnasio</h2>
+            @if (g.descripcion) { <p class="caja__texto">{{ g.descripcion }}</p> }
+            @if (g.servicios.length) {
+              <ul class="servicios">
+                @for (s of g.servicios; track $index) {
+                  <li><lucide-icon name="check" [size]="16" aria-hidden="true" />{{ s }}</li>
+                }
+              </ul>
+            }
+          </section>
+        }
+
+        @if (g.productos.length) {
+          <section class="caja" id="tienda" aria-labelledby="titulo-tienda" data-seccion revelar>
+            <h2 id="titulo-tienda">Tienda</h2>
+            <p class="bajada">Los pides por WhatsApp y los recoges en el gimnasio.</p>
+
+            @if (categorias().length > 1) {
+              <div class="filtros" role="group" aria-label="Filtrar por categoría">
+                <button type="button" [attr.aria-pressed]="categoriaSel() === null" (click)="elegirCategoria(null)">Todo</button>
+                @for (c of categorias(); track c) {
+                  <button type="button" [attr.aria-pressed]="categoriaSel() === c" (click)="elegirCategoria(c)">{{ c }}</button>
+                }
+              </div>
+            }
+
+            <ul class="productos">
+              @for (prod of productos(); track prod.id_producto) {
+                <!-- Sin [revelar] por fila: al filtrar, las filas se crean de nuevo y nacían invisibles. -->
+                <li class="prod" [class.prod--agotado]="!prod.disponible">
+                  <span class="prod__foto">
+                    @if (fotoProducto(prod); as src) {
+                      <img [src]="src" alt="" width="64" height="64" loading="lazy" />
+                    } @else {
+                      <lucide-icon [name]="iconoCategoria(prod.categoria)" [size]="26" aria-hidden="true" />
+                    }
+                  </span>
+                  <div class="prod__texto">
+                    <h3>{{ prod.nombre }}</h3>
+                    @if (prod.descripcion) { <span class="prod__desc">{{ prod.descripcion }}</span> }
+                    <span class="prod__precio">{{ prod.precio | currency: g.moneda : 'symbol-narrow' : '1.0-0' }}</span>
+                  </div>
+                  @if (!prod.disponible) {
+                    <span class="prod__agotado">Agotado</span>
+                  } @else if (whatsapp(mensajeProducto(prod)); as wa) {
+                    <a class="prod__pedir" [href]="wa" target="_blank" rel="noopener"
+                       [attr.aria-label]="'Pedir ' + prod.nombre + ' por WhatsApp'">Pedir</a>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+
+      <!-- Columna lateral: lo que se consulta sin leer lo demás. -->
+      <aside class="lateral" id="horario" aria-label="Horario y ubicación" data-seccion>
+        @if (horario().length) {
+          <div class="caja caja--lado">
+            <h2 class="lateral__titulo"><lucide-icon name="clock" [size]="18" aria-hidden="true" />Horario</h2>
+            <ul class="horario">
+              @for (h of horario(); track $index) {
+                <li [class.horario__hoy]="$index === lineaHoy()">
+                  <span>{{ h.dias }}@if ($index === lineaHoy()) {<span class="sr-only"> (hoy)</span>}</span>
+                  @if (h.horas) { <strong>{{ h.horas }}</strong> }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+        @if (g.direccion) {
+          <div class="caja caja--lado">
+            <h2 class="lateral__titulo"><lucide-icon name="map-pin" [size]="18" aria-hidden="true" />Dónde estamos</h2>
+            <p class="lateral__texto">{{ g.direccion }}</p>
+            @if (g.mapa_url) {
+              <a class="enlace" [href]="g.mapa_url" target="_blank" rel="noopener">Abrir en el mapa <lucide-icon name="arrow-up-right" [size]="16" aria-hidden="true" /></a>
+            }
+          </div>
+        }
+        @if (whatsapp(mensajeGeneral()); as wa) {
+          <div class="caja caja--lado contacto">
+            <h2 class="lateral__titulo">¿Tienes dudas?</h2>
+            <p class="lateral__texto">Escríbenos y te contamos qué plan te sirve y cuándo puedes venir a conocernos.</p>
+            <a class="btn btn--claro" [href]="wa" target="_blank" rel="noopener">
+              <lucide-icon name="whatsapp-logo" [size]="20" aria-hidden="true" />
+              {{ numeroWhatsapp() ?? 'Escribir por WhatsApp' }}
+            </a>
+          </div>
+        }
+      </aside>
+    </div>
+  </main>
+
+  <!-- Cierre del gimnasio: SU pie, con su nombre y sus datos. -->
+  <footer class="pie">
+    <div class="marco pie__gimnasio">
+      <div class="pie__marca">
+        @if (logo(); as src) {
+          <img class="pie__logo" [src]="src" alt="" width="40" height="40" />
+        } @else {
+          <span class="pie__logo pie__logo--iniciales" aria-hidden="true">{{ iniciales() }}</span>
+        }
+        <div>
+          <p class="pie__nombre">{{ g.nombre }}</p>
+          @if (g.direccion) { <p class="pie__dato">{{ g.direccion }}</p> }
+        </div>
+      </div>
+      <div class="pie__enlaces">
+        @if (whatsapp(mensajeGeneral()); as wa) {
+          <a [href]="wa" target="_blank" rel="noopener"><lucide-icon name="whatsapp-logo" [size]="18" aria-hidden="true" />WhatsApp</a>
+        }
+        @if (g.redes.instagram) { <a [href]="g.redes.instagram" target="_blank" rel="noopener">Instagram</a> }
+        @if (g.redes.facebook) { <a [href]="g.redes.facebook" target="_blank" rel="noopener">Facebook</a> }
+        @if (g.redes.tiktok) { <a [href]="g.redes.tiktok" target="_blank" rel="noopener">TikTok</a> }
+      </div>
+      @if (g.creditos_fotos) {
+        <details class="pie__creditos">
+          <summary>Créditos de las fotos</summary>
+          <p>{{ g.creditos_fotos }}</p>
+        </details>
+      }
+    </div>
+
+    <!-- Franja de EscalApp, igual que el menú digital, el portal de reservas y Celulares: la
+         invitación a crear una página propia y la nota legal. Va aparte del cierre del gimnasio. -->
+    <div class="escalapp">
+      <a class="escalapp__cta" [href]="sitioEscalapp" target="_blank" rel="noopener">
+        <span>¿Tienes un gimnasio? Crea tu página con <strong>EscalApp</strong></span>
+        <span class="escalapp__icono"><lucide-icon name="arrow-up-right" [size]="16" aria-hidden="true" /></span>
+      </a>
+      <span class="escalapp__sep" aria-hidden="true"></span>
+      <span class="escalapp__copy">© {{ anio }} EscalApp. Todos los derechos reservados.</span>
+    </div>
+  </footer>
+
+  <!-- En el celular el WhatsApp queda siempre a mano. -->
+  @if (whatsapp(mensajeGeneral()); as wa) {
+    <a class="flotante" [href]="wa" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+      <lucide-icon name="whatsapp-logo" [size]="28" />
+    </a>
+  }
+}

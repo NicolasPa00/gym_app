@@ -2,24 +2,26 @@
   <header class="page__head">
     <div>
       <h1>Miembros</h1>
-      <p>{{ total() }} registros</p>
+      <p>{{ total() }} {{ total() === 1 ? 'miembro registrado' : 'miembros registrados' }}</p>
     </div>
     <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
-      <lucide-icon name="plus" [size]="16" /> Nuevo miembro
+      <lucide-icon name="user-plus" [size]="16" /> Nuevo miembro
     </button>
   </header>
 
   <div class="filters">
     <div class="search">
       <lucide-icon name="search" [size]="16" />
-      <input class="input" type="search" placeholder="Buscar por nombre, identificación, email…"
+      <input class="input" type="search" placeholder="Buscar por nombre, cédula, correo o teléfono"
+             aria-label="Buscar miembros"
              [ngModel]="busqueda()" (ngModelChange)="onBusquedaChange($event)" />
     </div>
-    <select class="select" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event); cargar()">
+    <select class="select" aria-label="Filtrar por estado"
+            [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event); cargar()">
       <option value="">Todos los estados</option>
       <option value="ACTIVO">Activos</option>
       <option value="SUSPENDIDO">Suspendidos</option>
-      <option value="MOROSO">Morosos</option>
+      <option value="MOROSO">En mora</option>
       <option value="INACTIVO">Inactivos</option>
     </select>
   </div>
@@ -34,47 +36,66 @@
         <thead>
           <tr>
             <th>Miembro</th>
-            <th>QR</th>
             <th>Contacto</th>
-            <th>Vencimiento</th>
+            <th>Membresía hasta</th>
+            <th>Huella</th>
             <th>Estado</th>
-            <th></th>
+            <th><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
           @for (m of miembros(); track m.id_miembro) {
             <tr>
               <td>
-                <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
-                @if (m.num_identificacion) {<small>ID: {{ m.num_identificacion }}</small>}
+                <div class="persona">
+                  <span class="persona__avatar" aria-hidden="true">{{ iniciales(m) }}</span>
+                  <span class="persona__datos">
+                    <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
+                    <small>{{ m.num_identificacion ? 'C.C. ' + m.num_identificacion : m.codigo_qr }}</small>
+                  </span>
+                </div>
               </td>
-              <td><code class="qr">{{ m.codigo_qr }}</code></td>
               <td>
-                <span>{{ m.email || '—' }}</span><br>
-                <small>{{ m.telefono || '—' }}</small>
+                {{ m.telefono || '—' }}
+                <small>{{ m.email || 'Sin correo' }}</small>
               </td>
               <td>
                 @if (vencimientoMembresia(m); as v) {
-                  {{ v | date:'mediumDate' }}
+                  {{ v | date: 'mediumDate' }}
                 } @else {
                   <span class="muted">Sin membresía</span>
+                }
+              </td>
+              <td>
+                @if (m.autoriza_biometria) {
+                  <span class="badge b-primary">
+                    <lucide-icon name="fingerprint" [size]="12" aria-hidden="true" /> Autorizada
+                  </span>
+                } @else {
+                  <span class="muted">Cédula o QR</span>
                 }
               </td>
               <td>
                 <span class="badge" [class.b-ok]="m.estado === 'ACTIVO'"
                                     [class.b-warn]="m.estado === 'MOROSO'"
                                     [class.b-off]="m.estado === 'INACTIVO' || m.estado === 'SUSPENDIDO'">
-                  {{ m.estado }}
+                  {{ m.estado | etiqueta }}
                 </span>
               </td>
               <td class="actions">
+                <button class="btn btn-ghost btn-icon" type="button" (click)="abrirAutorizaciones(m)"
+                        title="Datos sensibles y autorizaciones" aria-label="Autorizaciones de {{ m.primer_nombre }}">
+                  <lucide-icon name="shield-check" [size]="18" />
+                </button>
                 @if (m.estado === 'ACTIVO') {
-                  <button class="btn btn-ghost" type="button" (click)="cambiarEstado(m, 'SUSPENDIDO')" title="Suspender">
-                    <lucide-icon name="pause" [size]="16" />
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="cambiarEstado(m, 'SUSPENDIDO')"
+                          title="Suspender" aria-label="Suspender a {{ m.primer_nombre }}">
+                    <lucide-icon name="pause" [size]="18" />
                   </button>
                 } @else {
-                  <button class="btn btn-ghost" type="button" (click)="cambiarEstado(m, 'ACTIVO')" title="Activar">
-                    <lucide-icon name="play" [size]="16" />
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="cambiarEstado(m, 'ACTIVO')"
+                          title="Activar" aria-label="Activar a {{ m.primer_nombre }}">
+                    <lucide-icon name="play" [size]="18" />
                   </button>
                 }
               </td>
@@ -86,11 +107,14 @@
   </div>
 </section>
 
+<!-- ── Nuevo miembro ── -->
 @if (modalAbierto()) {
   <div class="modal" (click)="cerrarModal()">
-    <div class="modal__panel" (click)="$event.stopPropagation()">
-      <h2>Nuevo miembro</h2>
-      <div class="grid">
+    <div class="modal__panel modal__panel--ancho" role="dialog" aria-labelledby="titulo-nuevo"
+         (click)="$event.stopPropagation()">
+      <h2 id="titulo-nuevo">Nuevo miembro</h2>
+
+      <div class="grid-form">
         <label>
           Primer nombre *
           <input class="input" [ngModel]="form().primer_nombre"
@@ -102,34 +126,37 @@
                  (ngModelChange)="actualizarCampo('primer_apellido', $event)" />
         </label>
         <label>
-          Identificación
-          <input class="input" [ngModel]="form().num_identificacion"
+          Cédula
+          <input class="input" inputmode="numeric" [ngModel]="form().num_identificacion"
                  (ngModelChange)="actualizarCampo('num_identificacion', $event)" />
         </label>
         <label>
-          Email
+          Teléfono
+          <input class="input" type="tel" [ngModel]="form().telefono"
+                 (ngModelChange)="actualizarCampo('telefono', $event)" />
+        </label>
+        <label>
+          Correo
           <input class="input" type="email" [ngModel]="form().email"
                  (ngModelChange)="actualizarCampo('email', $event)" />
         </label>
         <label>
-          Teléfono
-          <input class="input" [ngModel]="form().telefono"
-                 (ngModelChange)="actualizarCampo('telefono', $event)" />
-        </label>
-        <label>
-          Fecha nacimiento
+          Fecha de nacimiento
           <input class="input" type="date" [ngModel]="form().fecha_nacimiento"
                  (ngModelChange)="actualizarCampo('fecha_nacimiento', $event)" />
         </label>
         <label>
           Sexo
-          <select class="select" [ngModel]="form().sexo"
-                  (ngModelChange)="actualizarCampo('sexo', $event)">
-            <option [ngValue]="null">—</option>
+          <select class="select" [ngModel]="form().sexo" (ngModelChange)="actualizarCampo('sexo', $event)">
+            <option [ngValue]="null">Sin indicar</option>
             <option value="M">Masculino</option>
             <option value="F">Femenino</option>
             <option value="O">Otro</option>
           </select>
+        </label>
+        <label>
+          Ciudad
+          <input class="input" [ngModel]="form().ciudad" (ngModelChange)="actualizarCampo('ciudad', $event)" />
         </label>
         <label>
           Peso (kg)
@@ -143,34 +170,63 @@
         </label>
         <label class="full">
           Dirección
-          <input class="input" [ngModel]="form().direccion"
-                 (ngModelChange)="actualizarCampo('direccion', $event)" />
+          <input class="input" [ngModel]="form().direccion" (ngModelChange)="actualizarCampo('direccion', $event)" />
         </label>
+
+        <p class="form-seccion">Contacto de emergencia</p>
         <label>
-          Ciudad
-          <input class="input" [ngModel]="form().ciudad"
-                 (ngModelChange)="actualizarCampo('ciudad', $event)" />
-        </label>
-        <label class="full">
-          Contacto de emergencia
-          <input class="input" placeholder="Nombre" [ngModel]="form().contacto_emergencia_nombre"
+          Nombre
+          <input class="input" [ngModel]="form().contacto_emergencia_nombre"
                  (ngModelChange)="actualizarCampo('contacto_emergencia_nombre', $event)" />
         </label>
-        <label class="full">
-          Teléfono de emergencia
-          <input class="input" [ngModel]="form().contacto_emergencia_telefono"
+        <label>
+          Teléfono
+          <input class="input" type="tel" [ngModel]="form().contacto_emergencia_telefono"
                  (ngModelChange)="actualizarCampo('contacto_emergencia_telefono', $event)" />
         </label>
-        <label class="full">
-          Condiciones médicas
-          <textarea class="textarea" rows="2" [ngModel]="form().condiciones_medicas"
-                    (ngModelChange)="actualizarCampo('condiciones_medicas', $event)"></textarea>
-        </label>
-        <label class="full">
-          Alergias
-          <textarea class="textarea" rows="2" [ngModel]="form().alergias"
-                    (ngModelChange)="actualizarCampo('alergias', $event)"></textarea>
-        </label>
+
+        <!-- Salud: dato sensible. Los campos se abren solo con la autorización marcada. -->
+        <p class="form-seccion">Salud <span class="opcional">opcional</span></p>
+        <div class="autorizacion full" [class.autorizacion--on]="autorizaSalud()">
+          <label class="autorizacion__check">
+            <input type="checkbox" class="ui-interruptor" role="switch"
+                   [ngModel]="autorizaSalud()" (ngModelChange)="cambiarAutorizaSalud($event)" />
+            <span>El miembro autoriza guardar sus condiciones médicas y alergias</span>
+          </label>
+          @if (textos(); as t) {
+            <p class="autorizacion__texto">{{ t.SALUD.texto }}</p>
+          }
+        </div>
+        @if (autorizaSalud()) {
+          <label class="full">
+            Condiciones médicas
+            <textarea class="textarea" rows="2" [ngModel]="form().condiciones_medicas"
+                      (ngModelChange)="actualizarCampo('condiciones_medicas', $event)"></textarea>
+          </label>
+          <label class="full">
+            Alergias
+            <textarea class="textarea" rows="2" [ngModel]="form().alergias"
+                      (ngModelChange)="actualizarCampo('alergias', $event)"></textarea>
+          </label>
+        }
+
+        <!-- Huella: dato sensible. Solo deja la autorización; el registro de la huella se hace
+             en el lector del gimnasio (docs/gym-biometria.md). -->
+        <p class="form-seccion">Ingreso con huella <span class="opcional">opcional</span></p>
+        <div class="autorizacion full" [class.autorizacion--on]="autorizaBiometria()">
+          <label class="autorizacion__check">
+            <input type="checkbox" class="ui-interruptor" role="switch"
+                   [ngModel]="autorizaBiometria()" (ngModelChange)="autorizaBiometria.set($event)" />
+            <span>El miembro autoriza registrar su huella para entrar</span>
+          </label>
+          @if (textos(); as t) {
+            <p class="autorizacion__texto">{{ t.BIOMETRIA.texto }}</p>
+          }
+          <p class="autorizacion__nota">
+            <lucide-icon name="info" [size]="14" aria-hidden="true" />
+            Si no la autoriza, entra con su cédula o su código QR. Nada cambia en el servicio.
+          </p>
+        </div>
       </div>
 
       @if (errorForm()) {
@@ -182,6 +238,82 @@
         <button class="btn btn-primary" type="button" (click)="guardar()" [disabled]="enviando()">
           {{ enviando() ? 'Guardando…' : 'Crear miembro' }}
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Autorizaciones de un miembro ── -->
+@if (fichaAut(); as m) {
+  <div class="modal" (click)="cerrarAutorizaciones()">
+    <div class="modal__panel modal__panel--ancho" role="dialog" aria-labelledby="titulo-aut"
+         (click)="$event.stopPropagation()">
+      <div>
+        <h2 id="titulo-aut">Datos sensibles de {{ m.primer_nombre }} {{ m.primer_apellido }}</h2>
+        <p class="hint">Cada cambio queda registrado con fecha, el texto aceptado y quién lo anotó.</p>
+      </div>
+
+      @if (cargandoAut()) {
+        <p class="muted">Cargando…</p>
+      } @else if (autorizaciones()) {
+        @for (tipo of tiposAut; track tipo) {
+          <div class="aut-fila" [class.aut-fila--on]="vigente(tipo)">
+            <span class="aut-fila__icono" aria-hidden="true">
+              <lucide-icon [name]="tipo === 'BIOMETRIA' ? 'fingerprint' : 'file-text'" [size]="20" />
+            </span>
+            <div class="aut-fila__texto">
+              <strong>{{ textos()?.[tipo]?.titulo || (tipo === 'BIOMETRIA' ? 'Huella o rostro' : 'Salud') }}</strong>
+              <span class="badge" [class.b-ok]="vigente(tipo)" [class.b-off]="!vigente(tipo)">
+                {{ vigente(tipo) ? 'Autorizada' : 'Sin autorizar' }}
+              </span>
+              @if (confirmarRevocar() === tipo) {
+                <p class="aut-fila__aviso">
+                  @if (tipo === 'SALUD') {
+                    Al revocarla se borran de la ficha sus condiciones médicas y alergias.
+                  } @else {
+                    Al revocarla hay que borrar su huella del lector del gimnasio.
+                  }
+                  Toca «Revocar» otra vez para confirmar.
+                </p>
+              }
+            </div>
+            @if (vigente(tipo)) {
+              <button class="btn btn-outline" type="button" [disabled]="guardandoAut() !== null"
+                      (click)="cambiarAutorizacion(tipo, false)">
+                {{ guardandoAut() === tipo ? 'Guardando…' : 'Revocar' }}
+              </button>
+            } @else {
+              <button class="btn btn-primary" type="button" [disabled]="guardandoAut() !== null"
+                      (click)="cambiarAutorizacion(tipo, true)">
+                {{ guardandoAut() === tipo ? 'Guardando…' : 'Registrar autorización' }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (autorizaciones()!.historial.length > 0) {
+          <details class="aut-historial">
+            <summary>Historial ({{ autorizaciones()!.historial.length }})</summary>
+            <ul>
+              @for (h of autorizaciones()!.historial; track h.id_autorizacion) {
+                <li>
+                  <span>{{ h.fecha | date: 'short' }}</span>
+                  <strong>{{ h.tipo === 'BIOMETRIA' ? 'Huella' : 'Salud' }}:</strong>
+                  {{ h.otorgada ? 'autorizó' : 'revocó' }}
+                  <small>texto {{ h.version_texto }}</small>
+                </li>
+              }
+            </ul>
+          </details>
+        }
+      }
+
+      @if (errorAut()) {
+        <p class="error">{{ errorAut() }}</p>
+      }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="cerrarAutorizaciones()">Cerrar</button>
       </div>
     </div>
   </div>

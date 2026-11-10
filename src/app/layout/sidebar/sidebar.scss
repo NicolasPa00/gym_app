@@ -1,61 +1,401 @@
-.sidebar {
-  display: flex; flex-direction: column;
-  width: 240px; min-height: 100vh;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
-  padding: 1.25rem 0;
+// Menú del gimnasio — mismos valores que restaurante_app/src/app/layout/sidebar/sidebar.scss.
+$ancho: 240px;
+$riel: 64px;
+$barra-inferior: 64px;
 
-  &__brand {
-    display: flex; align-items: center; gap: .65rem;
-    padding: 0 1.25rem 1rem;
-    border-bottom: 1px solid var(--color-border);
-    color: var(--color-primary);
-    div { display: flex; flex-direction: column; }
-    strong { color: var(--color-text-primary); font-size: .95rem; line-height: 1.1; }
-    span   { color: var(--color-text-muted); font-size: .75rem; }
-  }
-
-  &__nav {
-    display: flex; flex-direction: column; padding: .75rem .5rem; gap: .15rem; flex: 1;
-
-    a {
-      display: flex; align-items: center; gap: .65rem;
-      padding: .55rem .75rem;
-      border-radius: var(--radius-md);
-      color: var(--color-text-secondary);
-      text-decoration: none; font-size: .9rem; font-weight: 500;
-      transition: background var(--transition-fast), color var(--transition-fast);
-
-      &:hover { background: var(--color-bg-muted); color: var(--color-text-primary); }
-      &.active { background: var(--color-primary); color: var(--color-on-primary); }
-    }
-  }
-
-  &__footer {
-    padding: .75rem .5rem; border-top: 1px solid var(--color-border);
-  }
-
-  &__logout {
-    width: 100%;
-    display: flex; align-items: center; gap: .65rem;
-    padding: .55rem .75rem;
-    border: none; background: transparent;
-    border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
-    font-size: .9rem; font-weight: 500; font-family: inherit;
-    text-align: left; cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
-
-    &:hover { background: var(--color-error-bg, var(--color-bg-muted)); color: var(--color-error); }
+// Sobre el azul noche el anillo del acento no se ve: el foco va en lavanda clara.
+@mixin foco-oscuro($offset: 2px) {
+  &:focus-visible {
+    outline: 2px solid var(--color-sidebar-focus);
+    outline-offset: $offset;
   }
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 64px;
-    &__brand div, &__nav a span, &__logout span { display: none; }
-    &__brand { justify-content: center; padding: 0 0 1rem; }
-    &__nav a { justify-content: center; padding: .65rem; }
-    &__logout { justify-content: center; }
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  width: $ancho;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
+  transition: width var(--transition-normal);
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    height: 64px;
+    padding: 0 var(--spacing-md);
+    border-bottom: 1px solid var(--color-sidebar-border);
+    flex-shrink: 0;
   }
+
+  &__plegar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-sidebar-text);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    &:hover {
+      background-color: var(--color-sidebar-hover);
+      color: var(--color-sidebar-text-strong);
+    }
+
+    @include foco-oscuro;
+  }
+
+  &__negocio {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: var(--spacing-sm) var(--spacing-sm) 0;
+    padding: 0.6rem 0.65rem;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.05);
+    min-width: 0;
+  }
+
+  &__negocio-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background: var(--color-sidebar-active);
+    color: var(--color-sidebar-text-strong);
+  }
+
+  &__negocio-texto {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    strong,
+    small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-sidebar-text-strong);
+      line-height: 1.3;
+    }
+
+    small {
+      font-size: var(--font-size-xs);
+      color: var(--color-sidebar-text);
+    }
+  }
+
+  &__nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--spacing-sm);
+    overflow-y: auto;
+  }
+
+  &__pie {
+    flex-shrink: 0;
+    padding: var(--spacing-sm);
+    border-top: 1px solid var(--color-sidebar-border);
+  }
+}
+
+a.logo-brand,
+.logo-iso {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  margin-left: -4px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+
+  img {
+    display: block;
+    height: 28px;
+    width: auto;
+  }
+
+  @include foco-oscuro;
+}
+
+.logo-iso {
+  display: none;
+  margin-left: 0;
+}
+
+.nav-seccion {
+  display: block;
+  padding: var(--spacing-md) var(--spacing-sm) var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-sidebar-text);
+  opacity: 0.75;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  color: var(--color-sidebar-text);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+
+  &:hover {
+    background-color: var(--color-sidebar-hover);
+    color: var(--color-sidebar-text-strong);
+  }
+
+  @include foco-oscuro(-2px);
+
+  // Activo: pastilla lavanda tenue y rótulo en blanco, como el panel y el restaurante.
+  &.active {
+    background-color: var(--color-sidebar-active);
+    color: var(--color-sidebar-text-strong);
+  }
+
+  &--salir {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+
+    // El rojo de error no se lee sobre el azul noche: coral claro, el mismo del panel.
+    &:hover {
+      background-color: rgba(244, 154, 146, 0.14);
+      color: #f6b0a9;
+    }
+  }
+}
+
+.nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ---------- Riel de íconos ----------
+@mixin riel {
+  width: $riel;
+
+  .sidebar__logo {
+    justify-content: center;
+    padding: 0 var(--spacing-xs);
+  }
+
+  .sidebar__negocio {
+    justify-content: center;
+    padding: 0.5rem 0;
+    background: transparent;
+  }
+
+  .sidebar__negocio-texto,
+  .nav-seccion,
+  .nav-label {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .sidebar__pie {
+    padding: var(--spacing-xs);
+  }
+}
+
+// Escritorio: plegado a mano.
+@media (min-width: 1024px) {
+  .sidebar.is-colapsado {
+    @include riel;
+
+    // `a.logo-brand` (arriba) pesa más que `.logo-brand`: con la clase sola no se ocultaba.
+    a.logo-brand {
+      display: none;
+    }
+  }
+}
+
+// Tableta: el riel no es una elección, es el ancho disponible.
+@media (max-width: 1023px) and (min-width: 768px) {
+  .sidebar {
+    @include riel;
+  }
+
+  .sidebar__plegar,
+  a.logo-brand {
+    display: none;
+  }
+
+  .logo-iso {
+    display: flex;
+  }
+}
+
+// ---------- Celular: barra inferior ----------
+.barra-inferior {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .sidebar {
+    display: none;
+  }
+
+  .barra-inferior {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    display: flex;
+    align-items: stretch;
+    height: calc(#{$barra-inferior} + env(safe-area-inset-bottom, 0px));
+    padding: 0 var(--spacing-xs) env(safe-area-inset-bottom, 0px);
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+
+    &__item {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: none;
+      background: none;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color var(--transition-fast);
+
+      span {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &.active {
+        color: var(--color-primary);
+        font-weight: 600;
+      }
+    }
+  }
+
+  .mas-cortina {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    background: rgba(33, 33, 66, 0.45);
+    animation: aparecer 200ms var(--ease-out);
+  }
+
+  .mas-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(#{$barra-inferior} + env(safe-area-inset-bottom, 0px));
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm) 0;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-lg);
+    animation: subir 220ms var(--ease-out);
+
+    &__cabeza {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+
+    &__cerrar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: var(--radius-full);
+      background: transparent;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      width: 100%;
+      padding: 12px var(--spacing-md);
+      border: none;
+      background: none;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      font-family: inherit;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      cursor: pointer;
+
+      &.active,
+      &:hover {
+        background-color: var(--color-surface-hover);
+        color: var(--color-text-primary);
+      }
+
+      &--salir {
+        margin-top: var(--spacing-xs);
+        border-top: 1px solid var(--color-border);
+        color: var(--color-error);
+      }
+    }
+  }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+}
+
+@keyframes subir {
+  from { transform: translateY(100%); }
 }

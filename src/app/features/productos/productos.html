@@ -2,7 +2,7 @@
   <header class="page__head">
     <div>
       <h1>Productos</h1>
-      <p>{{ total() }} en catálogo</p>
+      <p>{{ total() }} en catálogo · lo marcado «En la página» sale en tu tienda pública</p>
     </div>
     <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
       <lucide-icon name="plus" [size]="16" /> Nuevo producto
@@ -12,53 +12,101 @@
   <div class="filters">
     <div class="search">
       <lucide-icon name="search" [size]="16" />
-      <input class="input" type="search" placeholder="Buscar por nombre, SKU o categoría…"
+      <input class="input" type="search" placeholder="Buscar por nombre, código o categoría"
+             aria-label="Buscar productos"
              [ngModel]="busqueda()" (ngModelChange)="onBusquedaChange($event)" />
+    </div>
+    <div class="ui-filtros" role="group" aria-label="Filtrar productos">
+      <button type="button" class="ui-filtro" [class.ui-filtro--on]="filtro() === 'todos'"
+              (click)="filtro.set('todos')">Todos</button>
+      <button type="button" class="ui-filtro" [class.ui-filtro--on]="filtro() === 'bajo'"
+              (click)="filtro.set('bajo')">Bajo mínimo <span class="ui-filtro__n">{{ bajos() }}</span></button>
+      <button type="button" class="ui-filtro" [class.ui-filtro--on]="filtro() === 'sin-foto'"
+              (click)="filtro.set('sin-foto')">Sin foto <span class="ui-filtro__n">{{ sinFoto() }}</span></button>
     </div>
   </div>
 
+  @if (aviso(); as a) {
+    <p class="error" role="alert">{{ a }}</p>
+  }
+
   <div class="card-table">
-    @if (cargando()) { <p class="muted center">Cargando…</p> }
-    @else if (productos().length === 0) {
+    @if (cargando()) {
+      <p class="muted center">Cargando…</p>
+    } @else if (productos().length === 0) {
       <div class="empty">
         <lucide-icon name="package" [size]="44" />
-        <h3>Sin productos</h3>
-        <p>Agrega productos para empezar a venderlos en el módulo de Ventas.</p>
+        <h3>Todavía no hay productos</h3>
+        <p>Suplementos, bebidas, accesorios: lo que vendas en recepción. Con foto, salen en la tienda de tu página.</p>
+        <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
+          <lucide-icon name="plus" [size]="16" /> Crear producto
+        </button>
       </div>
+    } @else if (visibles().length === 0) {
+      <p class="muted center">Nada en este filtro.</p>
     } @else {
       <table>
         <thead>
           <tr>
             <th>Producto</th>
-            <th>SKU</th>
             <th>Categoría</th>
             <th class="num">Precio</th>
-            <th class="num">Stock</th>
-            <th></th>
+            <th class="num">Existencias</th>
+            <th>En la página</th>
+            <th><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (p of productos(); track p.id_producto) {
-            <tr [class.bajo-stock]="+p.stock_actual <= +p.stock_minimo">
+          @for (p of visibles(); track p.id_producto) {
+            <tr [class.bajo-stock]="bajo(p)">
               <td>
-                <strong>{{ p.nombre }}</strong>
-                @if (p.descripcion) { <small class="muted">{{ p.descripcion }}</small> }
+                <div class="prod">
+                  <span class="prod__foto">
+                    @if (foto(p); as src) {
+                      <img [src]="src" alt="" width="48" height="48" loading="lazy" />
+                    } @else {
+                      <lucide-icon name="image" [size]="18" aria-hidden="true" />
+                    }
+                  </span>
+                  <span class="prod__datos">
+                    <strong>{{ p.nombre }}</strong>
+                    <small>{{ p.sku || p.descripcion || 'Sin código' }}</small>
+                  </span>
+                </div>
               </td>
-              <td><code>{{ p.sku || '—' }}</code></td>
               <td>{{ p.categoria || '—' }}</td>
-              <td class="num">{{ p.precio | currency:'COP':'symbol':'1.0-0' }}</td>
-              <td class="num stock-cell">
-                <button class="btn btn-ghost xs" type="button" (click)="ajustarStock(p, -1)" title="Restar 1">−</button>
-                {{ +p.stock_actual }}
-                <button class="btn btn-ghost xs" type="button" (click)="ajustarStock(p, 1)" title="Sumar 1">+</button>
+              <td class="num">{{ p.precio | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</td>
+              <td class="num">
+                <span class="stock">
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="ajustarStock(p, -1)"
+                          [disabled]="+p.stock_actual <= 0" [attr.aria-label]="'Restar uno a ' + p.nombre">−</button>
+                  <span class="stock__valor" [class.stock__valor--bajo]="bajo(p)">{{ +p.stock_actual }}</span>
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="ajustarStock(p, 1)"
+                          [attr.aria-label]="'Sumar uno a ' + p.nombre">+</button>
+                </span>
+                @if (bajo(p)) {
+                  <small class="stock__aviso">{{ +p.stock_actual <= 0 ? 'Agotado' : 'Bajo el mínimo (' + (+p.stock_minimo) + ')' }}</small>
+                }
+              </td>
+              <td>
+                <input type="checkbox" class="ui-interruptor" role="switch"
+                       [checked]="p.publicado !== false"
+                       (change)="alternarPagina(p, $any($event.target).checked)"
+                       [attr.aria-label]="'Mostrar ' + p.nombre + ' en la página'" />
               </td>
               <td class="actions">
-                <button class="btn btn-ghost" type="button" (click)="abrirEdicion(p)" title="Editar">
-                  <lucide-icon name="pencil" [size]="14" />
+                <button class="btn btn-ghost btn-icon" type="button" (click)="abrirEdicion(p)" title="Editar"
+                        [attr.aria-label]="'Editar ' + p.nombre">
+                  <lucide-icon name="pencil" [size]="18" />
                 </button>
-                <button class="btn btn-ghost" type="button" (click)="inactivar(p)" title="Inactivar">
-                  <lucide-icon name="x" [size]="14" />
-                </button>
+                @if (confirmarInactivar() === p.id_producto) {
+                  <button class="btn btn-danger" type="button" (click)="inactivar(p)">Inactivar</button>
+                } @else {
+                  <button class="btn btn-ghost btn-icon" type="button" (click)="inactivar(p)" title="Inactivar"
+                          [attr.aria-label]="'Inactivar ' + p.nombre">
+                    <lucide-icon name="x" [size]="18" />
+                  </button>
+                }
               </td>
             </tr>
           }
@@ -70,53 +118,76 @@
 
 @if (modalAbierto()) {
   <div class="modal" (click)="cerrarModal()">
-    <div class="modal__panel" (click)="$event.stopPropagation()">
-      <h2>{{ editandoId() ? 'Editar producto' : 'Nuevo producto' }}</h2>
+    <div class="modal__panel modal__panel--ancho" role="dialog" aria-labelledby="titulo-producto"
+         (click)="$event.stopPropagation()">
+      <h2 id="titulo-producto">{{ editandoId() ? 'Editar producto' : 'Nuevo producto' }}</h2>
 
-      <label>
-        Nombre *
-        <input class="input" [ngModel]="form().nombre"
-               (ngModelChange)="actualizarCampo('nombre', $event)" />
-      </label>
-      <div class="row-2">
-        <label>SKU
-          <input class="input" [ngModel]="form().sku"
-                 (ngModelChange)="actualizarCampo('sku', $event)" />
-        </label>
-        <label>Categoría
-          <input class="input" placeholder="Suplementos, accesorios…"
-                 [ngModel]="form().categoria"
-                 (ngModelChange)="actualizarCampo('categoria', $event)" />
-        </label>
+      <div class="ventana">
+        <div class="ventana__foto">
+          <div class="foto-grande">
+            @if (fotoEnVentana(); as src) {
+              <img [src]="src" alt="Foto del producto" />
+            } @else {
+              <span><lucide-icon name="image" [size]="28" aria-hidden="true" /> Sin foto</span>
+            }
+          </div>
+          <div class="foto-acciones">
+            <label class="btn btn-outline">
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden (change)="elegirFoto($event)" />
+              <lucide-icon name="upload" [size]="16" aria-hidden="true" /> {{ fotoEnVentana() ? 'Cambiar foto' : 'Subir foto' }}
+            </label>
+            @if (fotoEnVentana()) {
+              <button type="button" class="btn btn-ghost" (click)="descartarFoto()">Quitar</button>
+            }
+          </div>
+          <small class="ayuda">Cuadrada se ve mejor. Se ajusta sola al tamaño de la tienda.</small>
+        </div>
+
+        <div class="ventana__datos">
+          <label>
+            Nombre *
+            <input class="input" [ngModel]="form().nombre" (ngModelChange)="actualizarCampo('nombre', $event)" />
+          </label>
+          <div class="row-2">
+            <label>Categoría
+              <input class="input" placeholder="Suplementos, bebidas…" [ngModel]="form().categoria"
+                     (ngModelChange)="actualizarCampo('categoria', $event)" />
+            </label>
+            <label>Código
+              <input class="input" [ngModel]="form().sku" (ngModelChange)="actualizarCampo('sku', $event)" />
+            </label>
+          </div>
+          <div class="row-2">
+            <label>Precio *
+              <input class="input" type="number" min="0" step="100" [ngModel]="form().precio"
+                     (ngModelChange)="actualizarCampo('precio', $event)" />
+            </label>
+            <label>Costo
+              <input class="input" type="number" min="0" step="100" [ngModel]="form().costo"
+                     (ngModelChange)="actualizarCampo('costo', $event)" />
+            </label>
+          </div>
+          <div class="row-2">
+            <label>Existencias
+              <input class="input" type="number" min="0" step="1" [ngModel]="form().stock_actual"
+                     (ngModelChange)="actualizarCampo('stock_actual', $event)" />
+            </label>
+            <label>Mínimo
+              <input class="input" type="number" min="0" step="1" [ngModel]="form().stock_minimo"
+                     (ngModelChange)="actualizarCampo('stock_minimo', $event)" />
+            </label>
+          </div>
+          <label>Descripción
+            <textarea class="textarea" rows="2" placeholder="Sale debajo del nombre en tu página"
+                      [ngModel]="form().descripcion" (ngModelChange)="actualizarCampo('descripcion', $event)"></textarea>
+          </label>
+          <label class="interruptor-fila">
+            <input type="checkbox" class="ui-interruptor" role="switch"
+                   [ngModel]="form().publicado !== false" (ngModelChange)="actualizarCampo('publicado', $event)" />
+            <span>Mostrar en la tienda de la página pública</span>
+          </label>
+        </div>
       </div>
-      <div class="row-2">
-        <label>Precio (COP) *
-          <input class="input" type="number" min="0" step="100"
-                 [ngModel]="form().precio"
-                 (ngModelChange)="actualizarCampo('precio', $event)" />
-        </label>
-        <label>Costo (COP)
-          <input class="input" type="number" min="0" step="100"
-                 [ngModel]="form().costo"
-                 (ngModelChange)="actualizarCampo('costo', $event)" />
-        </label>
-      </div>
-      <div class="row-2">
-        <label>Stock actual
-          <input class="input" type="number" min="0" step="1"
-                 [ngModel]="form().stock_actual"
-                 (ngModelChange)="actualizarCampo('stock_actual', $event)" />
-        </label>
-        <label>Stock mínimo
-          <input class="input" type="number" min="0" step="1"
-                 [ngModel]="form().stock_minimo"
-                 (ngModelChange)="actualizarCampo('stock_minimo', $event)" />
-        </label>
-      </div>
-      <label>Descripción
-        <textarea class="textarea" rows="2" [ngModel]="form().descripcion"
-                  (ngModelChange)="actualizarCampo('descripcion', $event)"></textarea>
-      </label>
 
       @if (errorForm()) { <p class="error">{{ errorForm() }}</p> }
 

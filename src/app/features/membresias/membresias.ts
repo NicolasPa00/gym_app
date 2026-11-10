@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
 import { Membresia, Miembro, Plan } from '../../core/models';
 
 @Component({
   selector: 'gym-membresias',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, DatePipe, CurrencyPipe],
+  imports: [FormsModule, LucideAngularModule, DatePipe, CurrencyPipe, EtiquetaPipe],
   templateUrl: './membresias.html',
   styleUrl: './membresias.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

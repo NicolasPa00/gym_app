@@ -1,27 +1,129 @@
-<aside class="sidebar">
-  <header class="sidebar__brand">
-    <lucide-icon name="dumbbell" [size]="22" />
-    <div>
-      <strong>{{ auth.negocio()?.nombre || 'Gimnasio' }}</strong>
-      <span>{{ auth.rolPrincipal() }}</span>
-    </div>
-  </header>
+<!-- Escritorio y tableta -->
+<aside class="sidebar" [class.is-colapsado]="colapsado()">
+  <div class="sidebar__logo">
+    <!-- Logo oficial en blanco sobre el azul noche (libro de marca 2026-10-26). Sin barra inicial:
+         se resuelve contra el <base href> (/gym/ en producción). -->
+    <a routerLink="/dashboard" class="logo-brand" aria-label="EscalApp, ir al inicio">
+      <img src="images/marca/logo-horizontal-blanco.svg" alt="" width="101" height="28" />
+    </a>
+    <a routerLink="/dashboard" class="logo-iso" aria-label="EscalApp, ir al inicio">
+      <img src="images/marca/isotipo-blanco.svg" alt="" width="21" height="28" />
+    </a>
+    <button
+      type="button"
+      class="sidebar__plegar"
+      (click)="alternarColapso()"
+      [attr.aria-label]="colapsado() ? 'Desplegar menú' : 'Plegar menú'"
+      [attr.aria-pressed]="colapsado()"
+      [title]="colapsado() ? 'Desplegar menú' : 'Plegar menú'"
+    >
+      <lucide-icon [name]="colapsado() ? 'panel-left' : 'panel-left-close'" [size]="18" aria-hidden="true" />
+    </button>
+  </div>
 
-  <nav class="sidebar__nav">
-    @for (it of itemsPermitidos(); track it.route) {
-      <a [routerLink]="it.route"
-         routerLinkActive="active"
-         [routerLinkActiveOptions]="{ exact: false }">
-        <lucide-icon [name]="it.icon" [size]="18" />
-        <span>{{ it.label }}</span>
+  <!-- El nombre del gimnasio: con la marca de EscalApp en el logo, es lo que dice en qué
+       negocio se está trabajando. -->
+  <div class="sidebar__negocio" [title]="auth.negocio()?.nombre || 'Gimnasio'">
+    <span class="sidebar__negocio-icono" aria-hidden="true">
+      <lucide-icon name="dumbbell" [size]="16" />
+    </span>
+    <span class="sidebar__negocio-texto">
+      <strong>{{ auth.negocio()?.nombre || 'Gimnasio' }}</strong>
+      <small>{{ rol() }}</small>
+    </span>
+  </div>
+
+  <nav class="sidebar__nav" aria-label="Menú principal">
+    @if (principales().length > 0) {
+      <span class="nav-seccion">Principal</span>
+    }
+    @for (it of principales(); track it.route) {
+      <a
+        class="nav-item"
+        [routerLink]="it.route"
+        [class.active]="estaActivo(it)"
+        [attr.aria-current]="estaActivo(it) ? 'page' : null"
+        [title]="it.label"
+      >
+        <lucide-icon [name]="iconoDe(it)" [size]="20" />
+        <span class="nav-label">{{ it.label }}</span>
+      </a>
+    }
+
+    @if (gestion().length > 0) {
+      <span class="nav-seccion">Gestión</span>
+    }
+    @for (it of gestion(); track it.route) {
+      <a
+        class="nav-item"
+        [routerLink]="it.route"
+        [class.active]="estaActivo(it)"
+        [attr.aria-current]="estaActivo(it) ? 'page' : null"
+        [title]="it.label"
+      >
+        <lucide-icon [name]="iconoDe(it)" [size]="20" />
+        <span class="nav-label">{{ it.label }}</span>
       </a>
     }
   </nav>
 
-  <footer class="sidebar__footer">
-    <button type="button" class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
-      <lucide-icon name="log-out" [size]="18" />
+  <div class="sidebar__pie">
+    <button type="button" class="nav-item nav-item--salir" (click)="logout()" title="Cerrar sesión">
+      <lucide-icon name="log-out" [size]="20" />
+      <span class="nav-label">Cerrar sesión</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Celular: barra inferior -->
+<nav class="barra-inferior" aria-label="Menú principal">
+  @for (it of enBarra(); track it.route) {
+    <a
+      class="barra-inferior__item"
+      [routerLink]="it.route"
+      [class.active]="estaActivo(it)"
+      [attr.aria-current]="estaActivo(it) ? 'page' : null"
+    >
+      <lucide-icon [name]="iconoDe(it)" [size]="22" />
+      <span>{{ it.label }}</span>
+    </a>
+  }
+  <button
+    type="button"
+    class="barra-inferior__item"
+    [class.active]="masAbierto()"
+    [attr.aria-expanded]="masAbierto()"
+    (click)="alternarMas()"
+  >
+    <lucide-icon name="menu" [size]="22" />
+    <span>Más</span>
+  </button>
+</nav>
+
+@if (masAbierto()) {
+  <div class="mas-cortina" (click)="cerrarMas()"></div>
+  <div class="mas-panel" role="dialog" aria-label="Más opciones">
+    <div class="mas-panel__cabeza">
+      <span>Más opciones</span>
+      <button type="button" class="mas-panel__cerrar" (click)="cerrarMas()" aria-label="Cerrar">
+        <lucide-icon name="x" [size]="20" />
+      </button>
+    </div>
+    @for (it of enMas(); track it.route) {
+      <a
+        class="mas-panel__item"
+        [routerLink]="it.route"
+        [class.active]="estaActivo(it)"
+        [attr.aria-current]="estaActivo(it) ? 'page' : null"
+        (click)="cerrarMas()"
+      >
+        <lucide-icon [name]="iconoDe(it)" [size]="20" />
+        <span>{{ it.label }}</span>
+      </a>
+    }
+    <button type="button" class="mas-panel__item mas-panel__item--salir" (click)="logout()">
+      <lucide-icon name="log-out" [size]="20" />
       <span>Cerrar sesión</span>
     </button>
-  </footer>
-</aside>
+  </div>
+}

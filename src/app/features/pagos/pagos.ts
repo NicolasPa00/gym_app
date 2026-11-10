@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
 import { Miembro, Pago, Plan } from '../../core/models';
 
 @Component({
   selector: 'gym-pagos',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, DatePipe, CurrencyPipe],
+  imports: [FormsModule, LucideAngularModule, DatePipe, CurrencyPipe, EtiquetaPipe],
   templateUrl: './pagos.html',
   styleUrl: './pagos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

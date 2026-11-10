@@ -1,18 +1,18 @@
 <section class="page">
   @if (!planActivo()) {
-    <div class="plan-banner">
+    <div class="plan-banner" role="status">
       <lucide-icon name="credit-card" [size]="18" aria-hidden="true" />
-      <span>Tu negocio no tiene un plan activo. Algunas funcionalidades están bloqueadas.</span>
+      <span>Tu negocio no tiene un plan activo. Algunas funciones están bloqueadas.</span>
     </div>
   }
 
   <header class="page__head">
     <div>
       <h1>Dashboard</h1>
-      <p>Resumen del día de {{ negocio()?.nombre }}</p>
+      <p>Resumen de hoy en {{ negocio()?.nombre || 'tu gimnasio' }}</p>
     </div>
     <button type="button" class="btn btn-outline" (click)="cargar()" [disabled]="cargando()">
-      <lucide-icon name="refresh-cw" [size]="16" />
+      <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true" />
       Actualizar
     </button>
   </header>
@@ -23,50 +23,127 @@
 
   @if (cargando() && !resumen()) {
     <p class="muted">Cargando…</p>
-  } @else if (resumen()) {
+  } @else if (resumen(); as r) {
     <div class="kpis">
-      <div class="kpi" routerLink="/miembros">
-        <lucide-icon name="users" [size]="22" />
-        <div>
-          <span>Miembros activos</span>
-          <strong>{{ resumen()!.miembros_activos }}</strong>
-        </div>
-      </div>
-      <div class="kpi" routerLink="/asistencias">
-        <lucide-icon name="log-in" [size]="22" />
-        <div>
-          <span>Asistencias hoy</span>
-          <strong>{{ resumen()!.asistencias_hoy }}</strong>
-        </div>
-      </div>
-      <div class="kpi">
-        <lucide-icon name="activity" [size]="22" />
-        <div>
-          <span>Dentro ahora</span>
-          <strong>{{ resumen()!.ocupacion_actual }}</strong>
-        </div>
-      </div>
-      <div class="kpi" routerLink="/pagos">
-        <lucide-icon name="banknote" [size]="22" />
-        <div>
-          <span>Ingresos hoy</span>
-          <strong>{{ resumen()!.ingresos_hoy | currency:'COP':'symbol':'1.0-0' }}</strong>
-        </div>
-      </div>
-      <div class="kpi">
-        <lucide-icon name="trending-up" [size]="22" />
-        <div>
-          <span>Ingresos del mes</span>
-          <strong>{{ resumen()!.ingresos_mes | currency:'COP':'symbol':'1.0-0' }}</strong>
-        </div>
-      </div>
-      <div class="kpi" routerLink="/membresias">
-        <lucide-icon name="triangle-alert" [size]="22" />
-        <div>
-          <span>Vencen en 5 días</span>
-          <strong>{{ resumen()!.proximos_vencen_5d }}</strong>
-        </div>
-      </div>
+      <a class="kpi kpi--dentro" routerLink="/ingreso">
+        <span class="kpi__icono"><lucide-icon name="activity" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Entrenando ahora</span>
+          <strong class="kpi__valor">{{ r.ocupacion_actual }}</strong>
+        </span>
+      </a>
+      <a class="kpi" routerLink="/ingreso">
+        <span class="kpi__icono"><lucide-icon name="door-open" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Ingresos de hoy</span>
+          <strong class="kpi__valor">{{ r.asistencias_hoy }}</strong>
+        </span>
+      </a>
+      <a class="kpi" routerLink="/miembros">
+        <span class="kpi__icono"><lucide-icon name="users" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Miembros activos</span>
+          <strong class="kpi__valor">{{ r.miembros_activos }}</strong>
+        </span>
+      </a>
+      <a class="kpi" [class.kpi--aviso]="r.proximos_vencen_5d > 0" routerLink="/membresias">
+        <span class="kpi__icono"><lucide-icon name="triangle-alert" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Vencen en 5 días</span>
+          <strong class="kpi__valor">{{ r.proximos_vencen_5d }}</strong>
+        </span>
+      </a>
+      <a class="kpi" routerLink="/pagos">
+        <span class="kpi__icono"><lucide-icon name="banknote" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Recaudo de hoy</span>
+          <strong class="kpi__valor">{{ r.ingresos_hoy | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </span>
+      </a>
+      <a class="kpi" routerLink="/pagos">
+        <span class="kpi__icono"><lucide-icon name="trending-up" [size]="22" /></span>
+        <span class="kpi__texto">
+          <span class="kpi__etiqueta">Recaudo del mes</span>
+          <strong class="kpi__valor">{{ r.ingresos_mes | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </span>
+      </a>
     </div>
+
+    <div class="paneles">
+      <!-- Quién está dentro -->
+      <article class="card panel">
+        <header class="panel__cabeza">
+          <h3>Entrenando ahora</h3>
+          <a class="panel__ver" routerLink="/ingreso">Ir a Ingreso <lucide-icon name="chevron-right" [size]="16" /></a>
+        </header>
+        @if (dentro().length === 0) {
+          <p class="panel__vacio">No hay nadie dentro en este momento.</p>
+        } @else {
+          <ul class="lista">
+            @for (a of dentro(); track a.id_asistencia) {
+              <li class="lista__fila">
+                <span class="persona__avatar" aria-hidden="true">{{ iniciales(a.miembro?.primer_nombre, a.miembro?.primer_apellido) }}</span>
+                <span class="lista__texto">
+                  <strong>{{ a.miembro?.primer_nombre }} {{ a.miembro?.primer_apellido }}</strong>
+                  <small>Entró {{ a.fecha_entrada | date: 'shortTime' }}</small>
+                </span>
+                <span class="lista__dato">{{ haceCuanto(a.fecha_entrada) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <!-- Membresías por vencer: a quién llamar -->
+      <article class="card panel">
+        <header class="panel__cabeza">
+          <h3>Vencen esta semana</h3>
+          <a class="panel__ver" routerLink="/membresias">Ir a Membresías <lucide-icon name="chevron-right" [size]="16" /></a>
+        </header>
+        @if (vencen().length === 0) {
+          <p class="panel__vacio">Ninguna membresía vence en los próximos 7 días.</p>
+        } @else {
+          <ul class="lista">
+            @for (m of vencen(); track m.id_membresia) {
+              <li class="lista__fila">
+                <span class="persona__avatar" aria-hidden="true">{{ iniciales(m.miembro?.primer_nombre, m.miembro?.primer_apellido) }}</span>
+                <span class="lista__texto">
+                  <strong>{{ m.miembro?.primer_nombre }} {{ m.miembro?.primer_apellido }}</strong>
+                  <small>{{ m.plan?.nombre || 'Plan' }} · {{ m.fecha_fin | date: 'd MMM' }}</small>
+                </span>
+                <span class="badge" [class.b-warn]="enCuanto(m.fecha_fin) === 'hoy' || enCuanto(m.fecha_fin) === 'mañana'">
+                  {{ enCuanto(m.fecha_fin) }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+    </div>
+
+    <!-- La página pública -->
+    @if (pagina(); as p) {
+      <article class="card pagina" [class.pagina--on]="p.pagina_activa">
+        <span class="pagina__icono" aria-hidden="true"><lucide-icon name="globe" [size]="22" /></span>
+        <div class="pagina__texto">
+          <h3>{{ p.pagina_activa ? 'Tu página está publicada' : 'Tu página todavía no está publicada' }}</h3>
+          <p>
+            @if (p.pagina_activa) {
+              Comparte el enlace en tus redes: muestra tus planes, tu tienda y tu horario, y te escriben por WhatsApp.
+            } @else {
+              Complétala en Configuración y publícala: tus planes, tu tienda y tu horario en un enlace para redes.
+            }
+          </p>
+        </div>
+        <div class="pagina__acciones">
+          @if (p.pagina_activa) {
+            <a class="btn btn-outline" [href]="p.url" target="_blank" rel="noopener">
+              <lucide-icon name="external-link" [size]="16" /> Ver página
+            </a>
+          }
+          <a class="btn btn-primary" routerLink="/configuracion">{{ p.pagina_activa ? 'Editar' : 'Completar' }}</a>
+        </div>
+      </article>
+    }
   }
 </section>

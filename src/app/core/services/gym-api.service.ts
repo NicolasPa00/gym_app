@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
-  ApiResponse, Paginated, Miembro, Plan, Membresia, Pago, Asistencia, ResumenDashboard,
+  ApiResponse, Paginated, Miembro, NuevoMiembro, TextoAutorizacion, TipoAutorizacion,
+  AutorizacionesMiembro, AutorizacionFila, MetodoIngreso, PaginaConfig, MarcaGimnasio, Plan, Membresia, Pago, Asistencia, ResumenDashboard,
   Producto, Venta,
 } from '../models';
 
@@ -42,11 +43,28 @@ export class GymApiService {
   getMiembroPorIdentificacion(num: string, idNegocio: number) {
     return this.http.get<ApiResponse<Miembro>>(`${this.base}/miembros/identificacion/${encodeURIComponent(num)}?id_negocio=${idNegocio}`);
   }
-  crearMiembro(data: Partial<Miembro>) {
+  crearMiembro(data: NuevoMiembro) {
     return this.http.post<ApiResponse<Miembro>>(`${this.base}/miembros`, data);
   }
   actualizarMiembro(id: number, data: Partial<Miembro>) {
     return this.http.put<ApiResponse<Miembro>>(`${this.base}/miembros/${id}`, data);
+  }
+  // ── Autorizaciones de datos sensibles ──
+  textosAutorizacion(idNegocio: number) {
+    return this.http.get<ApiResponse<Record<TipoAutorizacion, TextoAutorizacion>>>(
+      `${this.base}/miembros/autorizaciones/textos?id_negocio=${idNegocio}`,
+    );
+  }
+  listarAutorizaciones(idMiembro: number, idNegocio: number) {
+    return this.http.get<ApiResponse<AutorizacionesMiembro>>(
+      `${this.base}/miembros/${idMiembro}/autorizaciones?id_negocio=${idNegocio}`,
+    );
+  }
+  registrarAutorizacion(idMiembro: number, idNegocio: number, tipo: TipoAutorizacion, otorgada: boolean) {
+    return this.http.post<ApiResponse<AutorizacionFila>>(
+      `${this.base}/miembros/${idMiembro}/autorizaciones`,
+      { id_negocio: idNegocio, tipo, otorgada, medio: 'PRESENCIAL' },
+    );
   }
   cambiarEstadoMiembro(id: number, idNegocio: number, estado: Miembro['estado']) {
     return this.http.patch<ApiResponse<Miembro>>(
@@ -59,6 +77,35 @@ export class GymApiService {
     const url = `${this.base}/planes?id_negocio=${idNegocio}` + (incluirInactivos ? '&incluir_inactivos=true' : '');
     return this.http.get<ApiResponse<Plan[]>>(url);
   }
+  // ── Mi página ──
+  obtenerPagina(idNegocio: number) {
+    return this.http.get<ApiResponse<PaginaConfig>>(`${this.base}/pagina?id_negocio=${idNegocio}`);
+  }
+  guardarPagina(idNegocio: number, data: Partial<PaginaConfig>) {
+    return this.http.put<ApiResponse<PaginaConfig>>(`${this.base}/pagina`, { ...data, id_negocio: idNegocio });
+  }
+  obtenerMarca(idNegocio: number) {
+    return this.http.get<ApiResponse<MarcaGimnasio>>(`${this.base}/marca?id_negocio=${idNegocio}`);
+  }
+  guardarColor(idNegocio: number, primario: string) {
+    return this.http.put<ApiResponse<unknown>>(`${this.base}/marca/colores`, { id_negocio: idNegocio, primario, acento: primario });
+  }
+  restablecerColor(idNegocio: number) {
+    return this.http.delete<ApiResponse<unknown>>(`${this.base}/marca/colores?id_negocio=${idNegocio}`);
+  }
+  guardarSlug(idNegocio: number, slug: string) {
+    return this.http.put<ApiResponse<{ slug: string }>>(`${this.base}/marca/slug`, { id_negocio: idNegocio, slug });
+  }
+  subirImagen(idNegocio: number, tipo: 'logo' | 'banner', imagen: Blob) {
+    const fd = new FormData();
+    fd.append('id_negocio', String(idNegocio));
+    fd.append('imagen', new File([imagen], `${tipo}.webp`, { type: imagen.type || 'image/webp' }));
+    return this.http.post<ApiResponse<Record<string, string>>>(`${this.base}/marca/${tipo}`, fd);
+  }
+  eliminarImagen(idNegocio: number, tipo: 'logo' | 'banner') {
+    return this.http.delete<ApiResponse<unknown>>(`${this.base}/marca/${tipo}?id_negocio=${idNegocio}`);
+  }
+
   crearPlan(data: Partial<Plan>) { return this.http.post<ApiResponse<Plan>>(`${this.base}/planes`, data); }
   actualizarPlan(id: number, data: Partial<Plan>) { return this.http.put<ApiResponse<Plan>>(`${this.base}/planes/${id}`, data); }
   inactivarPlan(id: number, idNegocio: number) {
@@ -118,7 +165,7 @@ export class GymApiService {
     if (opts.page)      p = p.set('page', String(opts.page));
     return this.http.get<ApiResponse<Paginated<Asistencia>>>(`${this.base}/asistencias`, { params: p });
   }
-  registrarEntrada(payload: { id_negocio: number; id_miembro: number; metodo?: 'QR' | 'MANUAL' | 'HUELLA' }) {
+  registrarEntrada(payload: { id_negocio: number; id_miembro: number; metodo?: MetodoIngreso }) {
     return this.http.post<ApiResponse<{ asistencia: Asistencia; ya_estaba_dentro: boolean }>>(
       `${this.base}/asistencias/entrada`, payload,
     );
@@ -140,7 +187,16 @@ export class GymApiService {
   crearProducto(data: Partial<Producto>) {
     return this.http.post<ApiResponse<Producto>>(`${this.base}/productos`, data);
   }
-  actualizarProducto(id: number, data: Partial<Producto>) {
+  subirFotoProducto(id: number, idNegocio: number, imagen: Blob) {
+    const fd = new FormData();
+    fd.append('id_negocio', String(idNegocio));
+    fd.append('imagen', new File([imagen], 'producto.webp', { type: imagen.type || 'image/webp' }));
+    return this.http.post<ApiResponse<{ foto_url: string }>>(`${this.base}/productos/${id}/foto`, fd);
+  }
+  eliminarFotoProducto(id: number, idNegocio: number) {
+    return this.http.delete<ApiResponse<unknown>>(`${this.base}/productos/${id}/foto?id_negocio=${idNegocio}`);
+  }
+    actualizarProducto(id: number, data: Partial<Producto>) {
     return this.http.put<ApiResponse<Producto>>(`${this.base}/productos/${id}`, data);
   }
   inactivarProducto(id: number, idNegocio: number) {

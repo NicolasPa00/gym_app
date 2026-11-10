@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
 import { Producto, Miembro, Venta } from '../../core/models';
 
@@ -15,7 +16,7 @@ interface CarritoItem {
 @Component({
   selector: 'gym-ventas',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, CurrencyPipe, DatePipe],
+  imports: [FormsModule, LucideAngularModule, CurrencyPipe, DatePipe, EtiquetaPipe],
   templateUrl: './ventas.html',
   styleUrl: './ventas.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

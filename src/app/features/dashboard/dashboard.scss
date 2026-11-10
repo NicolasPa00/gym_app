@@ -1,45 +1,224 @@
-.page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+// Lo común (página, avisos) vive en src/styles/_pagina.scss.
 .plan-banner {
   display: flex;
   align-items: center;
-  gap: .625rem;
-  padding: .75rem 1rem;
-  background: var(--color-warning-bg); color: var(--color-warning);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 35%, var(--color-warning-bg));
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 30%, var(--color-warning-bg));
   border-radius: var(--radius-md);
-  font-size: .875rem;
+  font-size: var(--font-size-sm);
   font-weight: 500;
 }
-.page__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-  h1 { margin: 0; font-size: 1.5rem; }
-  p  { margin: .25rem 0 0; color: var(--color-text-muted); font-size: .9rem; }
-}
-.muted { color: var(--color-text-muted); }
-.error-banner { padding: .75rem 1rem; background: var(--color-error-bg); color: var(--color-error); border-radius: var(--radius-md); }
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: var(--spacing-md);
 }
+
+// Tarjetas con presencia (preferencia del dueño): ícono en recuadro y la cifra grande.
 .kpi {
-  display: flex; align-items: center; gap: .9rem;
-  padding: 1.1rem 1.2rem;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg); cursor: pointer;
-  transition: border-color var(--transition-fast), transform var(--transition-fast);
-  text-decoration: none; color: inherit;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 1.1rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
 
-  lucide-icon {
-    width: 44px; height: 44px;
-    background: var(--color-bg-muted);
-    color: var(--color-primary);
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
     border-radius: var(--radius-md);
-    display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    color: var(--color-primary);
   }
-  div { display: flex; flex-direction: column; min-width: 0; }
-  span   { font-size: .75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .04em; }
-  strong { font-size: 1.4rem; color: var(--color-text-primary); margin-top: .15rem; }
 
-  &:hover { border-color: var(--color-primary); transform: translateY(-1px); }
+  &__texto {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__etiqueta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  &__valor {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--color-text-primary);
+  }
+
+  // Un aviso se nota sin gritar: solo el recuadro del ícono cambia de color.
+  &--aviso .kpi__icono {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  &--dentro .kpi__icono {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+}
+
+a.kpi {
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform 160ms var(--ease-out);
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, var(--color-border));
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+}
+
+// ── Lo que hay que atender ──
+.paneles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  gap: var(--spacing-md);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-width: 0;
+
+  &__cabeza {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+  }
+
+  &__ver {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__vacio {
+    margin: 0;
+    padding: var(--spacing-lg) 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+}
+
+.lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &__fila {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+
+    & + & {
+      border-top: 1px solid var(--color-border);
+    }
+  }
+
+  &__texto {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+
+    small {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &__dato {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-success);
+  }
+}
+
+// ── La página pública ──
+.pagina {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+  }
+
+  &--on &__icono {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  &__texto {
+    flex: 1 1 320px;
+    min-width: 0;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0.2rem 0 0;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &__acciones {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+  }
 }

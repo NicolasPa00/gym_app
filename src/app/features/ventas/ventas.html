@@ -1,7 +1,9 @@
 <section class="page">
   <header class="page__head">
-    <h1>Ventas</h1>
-    <p>Punto de venta de productos del gimnasio</p>
+    <div>
+      <h1>Ventas</h1>
+      <p>Punto de venta de productos del gimnasio</p>
+    </div>
   </header>
 
   <div class="pos">
@@ -18,7 +20,7 @@
           @for (p of productos(); track p.id_producto) {
             <button class="prod" type="button" (click)="agregar(p)" [disabled]="+p.stock_actual <= 0">
               <strong>{{ p.nombre }}</strong>
-              <span class="precio">{{ p.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+              <span class="precio">{{ p.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
               <small class="stock" [class.out]="+p.stock_actual <= 0">Stock: {{ +p.stock_actual }}</small>
             </button>
           }
@@ -36,7 +38,7 @@
             <div class="cart-item">
               <div class="info">
                 <strong>{{ item.producto.nombre }}</strong>
-                <span>{{ item.producto.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+                <span>{{ item.producto.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
               </div>
               <div class="qty">
                 <button class="btn btn-ghost xs" type="button" (click)="cambiarCantidad(item, -1)">−</button>
@@ -85,25 +87,25 @@
 
       <div class="total">
         <span>Total</span>
-        <strong>{{ total() | currency:'COP':'symbol':'1.0-0' }}</strong>
+        <strong>{{ total() | currency:'COP':'symbol-narrow':'1.0-0' }}</strong>
       </div>
 
       @if (errorPos()) { <p class="error">{{ errorPos() }}</p> }
 
-      <button class="btn btn-primary" type="button" (click)="cobrar()" [disabled]="enviando() || carrito().length === 0">
+      <button class="btn btn-primary cobrar" type="button" (click)="cobrar()" [disabled]="enviando() || carrito().length === 0">
         {{ enviando() ? 'Cobrando…' : 'Cobrar' }}
       </button>
     </aside>
   </div>
 
-  <h2>Ventas recientes</h2>
+  <h2 class="seccion">Ventas recientes</h2>
   <div class="card-table">
     @if (cargandoVentas()) { <p class="muted center">Cargando…</p> }
     @else if (ventas().length === 0) { <p class="muted center">Sin ventas.</p> }
     @else {
       <table>
         <thead>
-          <tr><th>Fecha</th><th>Items</th><th>Miembro</th><th>Método</th><th class="num">Total</th><th>Estado</th><th></th></tr>
+          <tr><th>Fecha</th><th>Productos</th><th>Miembro</th><th>Método</th><th class="num">Total</th><th>Estado</th><th></th></tr>
         </thead>
         <tbody>
           @for (v of ventas(); track v.id_venta) {
@@ -118,9 +120,9 @@
                 @if (v.miembro) { {{ v.miembro.primer_nombre }} {{ v.miembro.primer_apellido }} }
                 @else { <span class="muted">—</span> }
               </td>
-              <td>{{ v.metodo }}</td>
-              <td class="num">{{ v.total | currency:'COP':'symbol':'1.0-0' }}</td>
-              <td><span class="badge" [class.b-ok]="v.estado === 'PAGADA'" [class.b-off]="v.estado === 'ANULADA'">{{ v.estado }}</span></td>
+              <td>{{ v.metodo | etiqueta }}</td>
+              <td class="num">{{ v.total | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+              <td><span class="badge" [class.b-ok]="v.estado === 'PAGADA'" [class.b-off]="v.estado === 'ANULADA'">{{ v.estado | etiqueta }}</span></td>
               <td class="actions">
                 @if (v.estado === 'PAGADA') {
                   <button class="btn btn-ghost" type="button" (click)="anular(v)" title="Anular">

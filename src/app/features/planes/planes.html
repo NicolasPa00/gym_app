@@ -14,8 +14,11 @@
   } @else if (planes().length === 0) {
     <div class="empty">
       <lucide-icon name="badge-percent" [size]="44" />
-      <h3>No hay planes creados</h3>
-      <p>Crea el primer plan para empezar a vender membresías.</p>
+      <h3>Todavía no hay planes</h3>
+      <p>Un plan es lo que vendes: «Mensual», «Trimestral», «Tiquetera de 10 clases». Crea el primero para poder asignar membresías.</p>
+      <button class="btn btn-primary" type="button" (click)="abrirNuevo()">
+        <lucide-icon name="plus" [size]="16" /> Crear plan
+      </button>
     </div>
   } @else {
     <div class="planes">
@@ -23,11 +26,24 @@
         <article class="plan-card" [class.plan-card--off]="p.estado !== 'A'">
           <header>
             <h3>{{ p.nombre }}</h3>
-            <span class="precio">{{ p.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+            <span class="precio">{{ p.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
           </header>
-          <p class="dur">{{ p.duracion_meses }} {{ p.duracion_meses === 1 ? 'mes' : 'meses' }}</p>
+          <p class="dur">
+            {{ p.duracion_meses }} {{ p.duracion_meses === 1 ? 'mes' : 'meses' }}
+            @if (p.estado === 'A' && p.publicado === false) {
+              <span class="badge b-off">No sale en la página</span>
+            }
+          </p>
           @if (p.descripcion) { <p class="desc">{{ p.descripcion }}</p> }
-          @if (p.beneficios) { <pre class="beneficios">{{ p.beneficios }}</pre> }
+          @if (lineas(p.beneficios); as items) {
+            @if (items.length > 0) {
+              <ul class="beneficios">
+                @for (b of items; track $index) {
+                  <li><lucide-icon name="check" [size]="14" aria-hidden="true" />{{ b }}</li>
+                }
+              </ul>
+            }
+          }
           <footer>
             <button class="btn btn-outline" type="button" (click)="abrirEdicion(p)">
               <lucide-icon name="pencil" [size]="14" /> Editar
@@ -35,7 +51,7 @@
             @if (p.estado === 'A') {
               <button class="btn btn-ghost" type="button" (click)="inactivar(p)">Inactivar</button>
             } @else {
-              <span class="badge-off">Inactivo</span>
+              <span class="badge b-off">Inactivo</span>
             }
           </footer>
         </article>
@@ -69,6 +85,11 @@
         Descripción
         <textarea class="textarea" rows="2" [ngModel]="form().descripcion"
                   (ngModelChange)="actualizarCampo('descripcion', $event)"></textarea>
+      </label>
+      <label class="interruptor-fila">
+        <input type="checkbox" class="ui-interruptor" role="switch"
+               [ngModel]="form().publicado !== false" (ngModelChange)="actualizarCampo('publicado', $event)" />
+        <span>Mostrar en la página pública del gimnasio</span>
       </label>
       <label>
         Beneficios (uno por línea)

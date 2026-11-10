@@ -1,72 +1,161 @@
-.page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
-.page__head h1 { margin: 0; font-size: 1.4rem; }
-.page__head p  { margin: .25rem 0 0; color: var(--color-text-muted); font-size: .85rem; }
-.muted { color: var(--color-text-muted); }
-.center { text-align: center; padding: 2rem 1rem; }
+// Lo común (tabla, filtros, avisos, autocompletar) vive en src/styles/_pagina.scss.
 
-.registro { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-  .card { padding: 1.25rem; }
-  h3 { margin: 0 0 .25rem; font-size: 1rem; }
-  p { margin: 0 0 .75rem; font-size: .85rem; }
-  @media (max-width: 720px) { grid-template-columns: 1fr; }
-}
+.dentro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
 
-.qr-input { display: flex; align-items: center; gap: .5rem;
-  lucide-icon { color: var(--color-primary); }
-  .input { flex: 1; font-family: ui-monospace, monospace; }
-}
-
-.msg { margin: .5rem 0 0; padding: .55rem .75rem; border-radius: var(--radius-md); font-size: .9rem; font-weight: 500;
-  &.ok { background: var(--color-success-bg); color: var(--color-success); }
-  &.warn { background: var(--color-warning-bg); color: var(--color-warning); }
-  &.err { background: var(--color-error-bg); color: var(--color-error); }
-}
-
-.autocomplete { position: relative;
-  .dropdown { position: absolute; top: 100%; left: 0; right: 0; max-height: 220px; overflow-y: auto;
-    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);
-    list-style: none; padding: .25rem; margin-top: .25rem; z-index: 5; box-shadow: var(--shadow-elevated);
-    li { padding: .45rem .55rem; border-radius: var(--radius-sm); cursor: pointer; display: flex; flex-direction: column; }
-    li:hover { background: var(--color-bg-muted); }
-    li small { font-size: .72rem; color: var(--color-text-muted); }
+  &__punto {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
   }
 }
 
-.filters { display: flex; gap: .75rem; flex-wrap: wrap; align-items: end;
-  label { display: flex; flex-direction: column; gap: .25rem; font-size: .75rem; color: var(--color-text-muted); }
-  .input { width: auto; }
-  .muted { margin-left: auto; }
+.ingreso {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--spacing-md);
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-.card-table { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden;
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  th, td { padding: .65rem .85rem; text-align: left; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
-  th { font-size: .72rem; text-transform: uppercase; color: var(--color-text-muted); font-weight: 600; }
-  td small { display: block; }
-  td.actions { text-align: right; }
-  tr.dentro { background: color-mix(in srgb, var(--color-success) 6%, transparent); }
-  tr:last-child td { border-bottom: none; }
-  .metodo { font-size: .7rem; font-weight: 600; padding: .15rem .45rem; border-radius: 999px;
-    background: var(--color-bg-muted); color: var(--color-text-secondary); }
+.registro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
-.page__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.bio-chip {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .35rem .65rem; border-radius: 999px;
-  background: var(--color-success-bg); color: var(--color-success);
-  font-size: .75rem; font-weight: 600;
-  &--off { background: var(--color-bg-muted); color: var(--color-text-muted); }
+// Selector de formulario (no es pestaña ni filtro: decide qué se escribe en el campo).
+.modos {
+  display: inline-flex;
+  gap: 0.25rem;
+  width: fit-content;
+  padding: 0.25rem;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+
+  .modo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+
+    &.active {
+      background: var(--color-surface);
+      color: var(--color-primary);
+      box-shadow: var(--shadow-sm);
+    }
+  }
 }
-.modos { display: flex; gap: .35rem; padding: .25rem; background: var(--color-bg-muted); border-radius: var(--radius-md); margin-bottom: .75rem; width: fit-content; }
-.modos .modo {
-  padding: .35rem .75rem; border: none; background: transparent;
-  border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: .8rem;
-  color: var(--color-text-muted); display: inline-flex; align-items: center; gap: .35rem;
-  &.active { background: var(--color-surface); color: var(--color-primary); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+// El campo de la recepción: grande, se usa todo el día y a veces con un lector de QR.
+.ingreso-input {
+  display: flex;
+  gap: var(--spacing-sm);
+
+  .input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.8rem 1rem;
+    font-size: var(--font-size-lg);
+    letter-spacing: 0.02em;
+  }
+
+  .btn {
+    padding: 0 1.25rem;
+  }
+
+  @media (max-width: 540px) {
+    flex-direction: column;
+
+    .btn {
+      padding: 0.75rem;
+    }
+  }
 }
-.ingreso-input { display: flex; align-items: center; gap: .5rem;
-  > lucide-icon { color: var(--color-primary); flex-shrink: 0; }
-  .input { flex: 1; font-family: ui-monospace, monospace; }
+
+.resultado {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  font-size: var(--font-size-base);
+  font-weight: 600;
+
+  lucide-icon {
+    flex-shrink: 0;
+  }
 }
-.hint { margin: .5rem 0 0; font-size: .75rem; color: var(--color-text-muted); }
+
+.manual {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+
+  &__titulo {
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+}
+
+.lector {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+
+  &__icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+    color: var(--color-primary);
+  }
+
+  p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  &__nota {
+    font-size: var(--font-size-xs) !important;
+    color: var(--color-text-muted) !important;
+  }
+}
+
+.filters .total {
+  margin-left: auto;
+  align-self: center;
+  font-size: var(--font-size-sm);
+}
+
+.card-table tr.esta-dentro td {
+  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface));
+}

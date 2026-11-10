@@ -3,6 +3,15 @@ import { authGuard, permissionGuard, planGuard } from './core/guards/auth.guard'
 import { LayoutComponent } from './layout/layout';
 
 export const routes: Routes = [
+  // Página pública del gimnasio (sin sesión): por su nombre propio o por id, como la tienda de
+  // celulares (`/t/:slug`) y la vitrina de reserva (`/p/:id_negocio`). Van ANTES del layout,
+  // que exige sesión.
+  ...['t/:slug', 'p/:id_negocio'].map((path) => ({
+    path,
+    title: 'Gimnasio',
+    loadComponent: () =>
+      import('./features/publico/pagina-gimnasio').then((m) => m.PaginaGimnasioComponent),
+  })),
   {
     path: 'auth/callback',
     title: 'Acceso',

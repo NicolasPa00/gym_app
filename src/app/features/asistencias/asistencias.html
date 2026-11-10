@@ -2,110 +2,125 @@
   <header class="page__head">
     <div>
       <h1>Ingreso</h1>
-      <p>Registro biométrico o por cédula del miembro</p>
+      <p>Registra quién entra con su cédula o su código QR</p>
     </div>
-    @if (soportaBiometria()) {
-      <span class="bio-chip" title="WebAuthn disponible (Windows Hello / Touch ID)">
-        <lucide-icon name="fingerprint-pattern" [size]="14" /> Biometría activa
-      </span>
-    } @else {
-      <span class="bio-chip bio-chip--off" title="Este dispositivo no expone biometría al navegador">
-        <lucide-icon name="fingerprint-pattern" [size]="14" /> Sin biometría
-      </span>
-    }
+    <span class="dentro" aria-live="polite">
+      <span class="dentro__punto" aria-hidden="true"></span>
+      {{ dentro() }} {{ dentro() === 1 ? 'persona entrenando' : 'personas entrenando' }}
+    </span>
   </header>
 
-  <div class="registro card">
-    <div class="modos">
-      <button type="button" class="modo" [class.active]="modo() === 'CEDULA'"
-              (click)="modo.set('CEDULA')">
-        <lucide-icon name="badge-check" [size]="16" /> Cédula
-      </button>
-      <button type="button" class="modo" [class.active]="modo() === 'QR'"
-              (click)="modo.set('QR')">
-        <lucide-icon name="scan-line" [size]="16" /> QR
-      </button>
-    </div>
-
-    <form (submit)="$event.preventDefault(); registrar()">
-      <div class="ingreso-input">
-        <lucide-icon [name]="modo() === 'QR' ? 'scan-line' : 'badge-check'" [size]="20" />
-        <input class="input" autofocus
-               [placeholder]="modo() === 'QR' ? 'GYM-XXXXXXXX' : 'Número de cédula'"
-               [ngModel]="inputValor()" (ngModelChange)="inputValor.set($event)" name="ingreso" />
-        <button class="btn btn-primary" type="submit"
-                [disabled]="procesando() || !inputValor().trim()">
-          <lucide-icon name="log-in" [size]="14" /> Ingresar
+  <div class="ingreso">
+    <div class="card registro">
+      <div class="modos" role="radiogroup" aria-label="Cómo se identifica">
+        <button type="button" class="modo" role="radio" [attr.aria-checked]="modo() === 'CEDULA'"
+                [class.active]="modo() === 'CEDULA'" (click)="cambiarModo('CEDULA')">
+          <lucide-icon name="id-card" [size]="16" /> Cédula
+        </button>
+        <button type="button" class="modo" role="radio" [attr.aria-checked]="modo() === 'QR'"
+                [class.active]="modo() === 'QR'" (click)="cambiarModo('QR')">
+          <lucide-icon name="qr-code" [size]="16" /> Código QR
         </button>
       </div>
-    </form>
 
-    @if (soportaBiometria()) {
-      <p class="hint">Al confirmar se pedirá tu huella/PIN del dispositivo (Windows Hello o Touch ID) para validar la operación.</p>
-    }
+      <form class="ingreso-input" (submit)="$event.preventDefault(); registrar()">
+        <input class="input" autofocus name="ingreso" autocomplete="off"
+               [attr.inputmode]="modo() === 'CEDULA' ? 'numeric' : null"
+               [attr.aria-label]="modo() === 'QR' ? 'Código QR del miembro' : 'Cédula del miembro'"
+               [placeholder]="modo() === 'QR' ? 'Escanea o escribe el código' : 'Número de cédula'"
+               [ngModel]="inputValor()" (ngModelChange)="inputValor.set($event)" />
+        <button class="btn btn-primary" type="submit" [disabled]="procesando() || !inputValor().trim()">
+          <lucide-icon name="log-in" [size]="16" /> {{ procesando() ? 'Buscando…' : 'Registrar ingreso' }}
+        </button>
+      </form>
 
-    @if (mensaje(); as m) {
-      <p class="msg" [class.ok]="m.tipo === 'ok'" [class.warn]="m.tipo === 'warn'" [class.err]="m.tipo === 'err'">
-        {{ m.texto }}
-      </p>
-    }
-  </div>
-
-  <div class="card">
-    <h3>Búsqueda manual</h3>
-    <p class="muted">Útil cuando el miembro no recuerda la cédula ni trae el QR.</p>
-    <div class="autocomplete">
-      <input class="input" type="search" placeholder="Buscar por nombre…"
-             [ngModel]="busquedaMiembro()" (ngModelChange)="buscarMiembros($event)" />
-      @if (miembrosBusqueda().length > 0) {
-        <ul class="dropdown">
-          @for (m of miembrosBusqueda(); track m.id_miembro) {
-            <li (click)="seleccionarMiembroManual(m)">
-              <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
-              <small>{{ m.num_identificacion || m.codigo_qr }}</small>
-            </li>
-          }
-        </ul>
+      @if (mensaje(); as m) {
+        <p class="msg resultado" role="status" [class.ok]="m.tipo === 'ok'" [class.warn]="m.tipo === 'warn'"
+           [class.err]="m.tipo === 'err'">
+          <lucide-icon [name]="m.tipo === 'ok' ? 'circle-check' : m.tipo === 'warn' ? 'info' : 'circle-x'" [size]="20" />
+          {{ m.texto }}
+        </p>
       }
+
+      <div class="manual">
+        <span class="manual__titulo">¿No trae la cédula ni el QR?</span>
+        <div class="autocomplete">
+          <input class="input" type="search" placeholder="Búscalo por su nombre" aria-label="Buscar miembro por nombre"
+                 [ngModel]="busquedaMiembro()" (ngModelChange)="buscarMiembros($event)" />
+          @if (miembrosBusqueda().length > 0) {
+            <ul class="dropdown">
+              @for (m of miembrosBusqueda(); track m.id_miembro) {
+                <li (click)="seleccionarMiembroManual(m)">
+                  <strong>{{ m.primer_nombre }} {{ m.primer_apellido }}</strong>
+                  <small>{{ m.num_identificacion ? 'C.C. ' + m.num_identificacion : m.codigo_qr }}</small>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
     </div>
+
+    <!-- El lector de huella del gimnasio. Hoy solo informa: la conexión la hará el programa de
+         EscalApp para PC (docs/gym-biometria.md en el backend). -->
+    <aside class="card lector">
+      <span class="lector__icono" aria-hidden="true"><lucide-icon name="fingerprint" [size]="26" /></span>
+      <h3>Lector de huella</h3>
+      <span class="badge b-off"><lucide-icon name="wifi-off" [size]="12" aria-hidden="true" /> Sin conectar</span>
+      <p>
+        Para que la puerta abra con la huella, el lector se conecta a EscalApp con un programa en el
+        computador de recepción. Mientras tanto, el ingreso es con cédula o QR.
+      </p>
+      <p class="lector__nota">
+        Solo se registra la huella de quien lo autoriza en su ficha de Miembros.
+      </p>
+    </aside>
   </div>
 
   <div class="filters">
     <label>Desde <input class="input" type="date" [ngModel]="desde()" (ngModelChange)="desde.set($event); cargar()"></label>
     <label>Hasta <input class="input" type="date" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cargar()"></label>
-    <span class="muted">{{ total() }} ingresos</span>
+    <span class="muted total">{{ total() }} {{ total() === 1 ? 'ingreso' : 'ingresos' }}</span>
   </div>
 
   <div class="card-table">
-    @if (cargando()) { <p class="muted center">Cargando…</p> }
-    @else if (asistencias().length === 0) { <p class="muted center">Sin ingresos en el rango.</p> }
-    @else {
+    @if (cargando()) {
+      <p class="muted center">Cargando…</p>
+    } @else if (asistencias().length === 0) {
+      <p class="muted center">Todavía no hay ingresos en estas fechas.</p>
+    } @else {
       <table>
         <thead>
           <tr>
             <th>Miembro</th>
             <th>Entrada</th>
             <th>Salida</th>
-            <th>Duración</th>
-            <th>Método</th>
-            <th></th>
+            <th>Tiempo</th>
+            <th>Cómo entró</th>
+            <th><span class="sr-only">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
           @for (a of asistencias(); track a.id_asistencia) {
-            <tr [class.dentro]="!a.fecha_salida">
+            <tr [class.esta-dentro]="!a.fecha_salida">
               <td>
                 <strong>{{ a.miembro?.primer_nombre }} {{ a.miembro?.primer_apellido }}</strong>
-                <small class="muted">{{ a.miembro?.codigo_qr }}</small>
+                <small>{{ a.miembro?.codigo_qr }}</small>
               </td>
-              <td>{{ a.fecha_entrada | date:'short' }}</td>
-              <td>{{ a.fecha_salida ? (a.fecha_salida | date:'short') : '—' }}</td>
+              <td>{{ a.fecha_entrada | date: 'short' }}</td>
+              <td>
+                @if (a.fecha_salida) {
+                  {{ a.fecha_salida | date: 'shortTime' }}
+                } @else {
+                  <span class="badge b-ok">Dentro</span>
+                }
+              </td>
               <td>{{ formatDuracion(a.duracion_minutos) }}</td>
-              <td><span class="metodo">{{ a.metodo }}</span></td>
+              <td>{{ a.metodo | etiqueta }}</td>
               <td class="actions">
                 @if (!a.fecha_salida) {
                   <button class="btn btn-outline" type="button" (click)="cerrarAsistencia(a)">
-                    <lucide-icon name="log-out" [size]="14" /> Salida
+                    <lucide-icon name="log-out" [size]="16" /> Salida
                   </button>
                 }
               </td>

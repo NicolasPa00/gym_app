@@ -29,10 +29,18 @@ export class PlanesComponent implements OnInit {
 
   readonly negocio = computed(() => this.auth.negocio());
 
+  /** Los beneficios se escriben uno por línea; en la tarjeta salen como lista. */
+  lineas(texto: string | null | undefined): string[] {
+    return (texto ?? '')
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^[-•*]\s*/, '').trim())
+      .filter(Boolean);
+  }
+
   ngOnInit(): void { this.cargar(); }
 
   private formVacio(): Partial<Plan> {
-    return { nombre: '', descripcion: '', precio: 0, duracion_meses: 1, beneficios: '' };
+    return { nombre: '', descripcion: '', precio: 0, duracion_meses: 1, beneficios: '', publicado: true };
   }
 
   cargar(): void {
@@ -53,7 +61,7 @@ export class PlanesComponent implements OnInit {
   }
 
   abrirEdicion(p: Plan): void {
-    this.form.set({ ...p });
+    this.form.set({ ...p, publicado: p.publicado !== false });
     this.editandoId.set(p.id_plan);
     this.errorForm.set(null);
     this.modalAbierto.set(true);

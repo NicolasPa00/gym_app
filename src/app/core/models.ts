@@ -62,6 +62,8 @@ export interface Plan {
   duracion_meses: number;
   beneficios: string | null;
   estado: 'A' | 'I';
+  /** Sale en la página pública (si además está activo). */
+  publicado?: boolean;
   fecha_creacion: string;
 }
 
@@ -105,6 +107,9 @@ export interface Miembro {
   contacto_emergencia_telefono?: string | null;
   foto_url?: string | null;
   codigo_qr: string;
+  /** Estado vigente de las autorizaciones de datos sensibles (solo lectura: lo escribe el libro). */
+  autoriza_biometria?: boolean;
+  autoriza_datos_salud?: boolean;
   estado: 'ACTIVO' | 'SUSPENDIDO' | 'MOROSO' | 'INACTIVO';
   fecha_registro: string;
   fecha_actualizacion: string;
@@ -132,9 +137,73 @@ export interface Asistencia {
   id_negocio: number;
   fecha_entrada: string;
   fecha_salida: string | null;
-  metodo: 'QR' | 'MANUAL' | 'HUELLA';
+  metodo: MetodoIngreso;
   duracion_minutos: number | null;
   miembro?: Pick<Miembro, 'id_miembro' | 'primer_nombre' | 'primer_apellido' | 'codigo_qr' | 'foto_url' | 'estado'>;
+}
+
+/** Lo que el gimnasio edita de su página pública (Configuración → Mi página). */
+export interface PaginaConfig {
+  url: string;
+  slug: string | null;
+  tiene_logo: boolean;
+  tiene_portada: boolean;
+  pagina_activa: boolean;
+  frase: string;
+  descripcion: string;
+  horario_texto: string;
+  servicios: string;
+  mapa_url: string;
+  creditos_fotos: string;
+  whatsapp: string;
+  direccion: string;
+  url_instagram: string;
+  url_facebook: string;
+  url_tiktok: string;
+}
+
+/** Identidad del negocio (logo, portada, color, URL propia): `GET /gym/marca`. */
+export interface MarcaGimnasio {
+  id_negocio: number;
+  nombre: string;
+  logo_url: string | null;
+  banner_url: string | null;
+  colores: { primario?: string; acento?: string } | null;
+  slug: string | null;
+}
+
+/** HUELLA y FACIAL los registra el programa del lector (docs/gym-biometria.md), no la recepción. */
+export type MetodoIngreso = 'QR' | 'MANUAL' | 'CEDULA' | 'HUELLA' | 'FACIAL';
+
+// ── Autorizaciones de datos sensibles (Ley 1581 de 2012) ──
+export type TipoAutorizacion = 'BIOMETRIA' | 'SALUD';
+
+/** El texto que el miembro lee y acepta, ya con el nombre del gimnasio. */
+export interface TextoAutorizacion {
+  tipo: TipoAutorizacion;
+  version: string;
+  titulo: string;
+  texto: string;
+}
+
+export interface AutorizacionFila {
+  id_autorizacion: number;
+  tipo: TipoAutorizacion;
+  otorgada: boolean;
+  version_texto: string;
+  texto: string;
+  medio: 'PRESENCIAL' | 'DIGITAL';
+  fecha: string;
+}
+
+export interface AutorizacionesMiembro {
+  autoriza_biometria: boolean;
+  autoriza_datos_salud: boolean;
+  historial: AutorizacionFila[];
+}
+
+export interface NuevoMiembro extends Partial<Miembro> {
+  autorizaciones?: { tipo: TipoAutorizacion; otorgada: boolean }[];
 }
 
 export interface ResumenDashboard {
@@ -160,6 +229,8 @@ export interface Producto {
   stock_minimo: number;
   foto_url: string | null;
   estado: 'A' | 'I';
+  /** Sale en la tienda de la página pública (si además está activo). */
+  publicado?: boolean;
   fecha_creacion: string;
   fecha_actualizacion: string;
 }

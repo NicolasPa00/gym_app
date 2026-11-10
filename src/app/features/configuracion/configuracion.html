@@ -2,38 +2,257 @@
   <header class="page__head">
     <div>
       <h1>Configuración</h1>
-      <p>Apariencia visual del gimnasio</p>
+      <p>Tu página pública y cómo tratas los datos de tus miembros</p>
     </div>
   </header>
 
-  <article class="card">
-    <h3>Paleta de colores</h3>
-    <p class="muted">Personaliza los colores del gimnasio. Se aplica para todos los usuarios del negocio.</p>
+  <nav class="ui-pestanas" aria-label="Secciones de configuración">
+    <button type="button" class="ui-pestana" [class.ui-pestana--on]="seccion() === 'pagina'"
+            [attr.aria-current]="seccion() === 'pagina' ? 'page' : null" (click)="seccion.set('pagina')">
+      <lucide-icon name="globe" [size]="16" aria-hidden="true" /> Mi página
+    </button>
+    <button type="button" class="ui-pestana" [class.ui-pestana--on]="seccion() === 'datos'"
+            [attr.aria-current]="seccion() === 'datos' ? 'page' : null" (click)="seccion.set('datos')">
+      <lucide-icon name="shield-check" [size]="16" aria-hidden="true" /> Datos sensibles
+    </button>
+  </nav>
 
-    @if (cargando()) {
-      <p class="muted">Cargando paletas…</p>
-    } @else if (palette.paletas().length === 0) {
-      <p class="muted">No hay paletas configuradas en el sistema.</p>
-    } @else {
-      <div class="paletas">
-        @for (p of palette.paletas(); track p.id_paleta) {
-          <button class="paleta" type="button" (click)="seleccionar(p)"
-                  [class.active]="esActiva(p)" [disabled]="guardando() === p.id_paleta">
-            <div class="swatches">
-              @for (c of preview(p); track $index) {
-                <span [style.background]="c"></span>
+  @if (aviso(); as a) {
+    <p class="msg" role="status" [class.ok]="a.tipo === 'ok'" [class.err]="a.tipo === 'err'">{{ a.texto }}</p>
+  }
+
+  <!-- ══════════ MI PÁGINA ══════════ -->
+  @if (seccion() === 'pagina') {
+    @if (cargandoPagina()) {
+      <p class="muted">Cargando…</p>
+    } @else if (pagina(); as p) {
+      <!-- Estado y enlace -->
+      <article class="card publicar" [class.publicar--on]="p.pagina_activa">
+        <div class="publicar__fila">
+          <div class="publicar__texto">
+            <h3>{{ p.pagina_activa ? 'Tu página está publicada' : 'Tu página está oculta' }}</h3>
+            <p class="muted">
+              @if (p.pagina_activa) {
+                Cualquiera con el enlace ve tus planes, horario y ubicación, y te escribe por WhatsApp.
+              } @else {
+                Complétala abajo y publícala cuando esté lista. Para publicarla hace falta un WhatsApp.
               }
-            </div>
-            <strong>{{ p.nombre }}</strong>
-            @if (p.descripcion) { <small>{{ p.descripcion }}</small> }
-            @if (esActiva(p)) { <span class="check"><lucide-icon name="check" [size]="14" /> Activa</span> }
+            </p>
+          </div>
+          <label class="publicar__interruptor">
+            <input type="checkbox" class="ui-interruptor" role="switch" [disabled]="guardando()"
+                   [ngModel]="p.pagina_activa" (ngModelChange)="alternarPublicada($event)"
+                   aria-label="Publicar la página" />
+            <span>{{ p.pagina_activa ? 'Publicada' : 'Oculta' }}</span>
+          </label>
+        </div>
+        <div class="enlace">
+          <code class="enlace__url">{{ p.url }}</code>
+          <button type="button" class="btn btn-outline" (click)="copiarEnlace()">
+            <lucide-icon [name]="copiado() ? 'check' : 'copy'" [size]="16" /> {{ copiado() ? 'Copiado' : 'Copiar enlace' }}
           </button>
-        }
-      </div>
-    }
+          @if (p.pagina_activa) {
+            <a class="btn btn-outline" [href]="p.url" target="_blank" rel="noopener">
+              <lucide-icon name="external-link" [size]="16" /> Ver página
+            </a>
+          }
+        </div>
+      </article>
 
-    @if (mensaje(); as m) {
-      <p class="msg" [class.ok]="m.tipo === 'ok'" [class.err]="m.tipo === 'err'">{{ m.texto }}</p>
+      <div class="columnas">
+        <!-- Identidad -->
+        <article class="card">
+          <h3>Cómo se ve</h3>
+
+          <div class="campo">
+            <span>Logo</span>
+            <div class="imagen">
+              <div class="imagen__muestra imagen__muestra--logo">
+                @if (logo(); as src) { <img [src]="src" alt="Logo actual" /> } @else { <lucide-icon name="dumbbell" [size]="24" /> }
+              </div>
+              <div class="imagen__acciones">
+                <label class="btn btn-outline">
+                  <input type="file" accept="image/png,image/jpeg,image/webp" hidden (change)="elegirImagen('logo', $event)" />
+                  {{ subiendo() === 'logo' ? 'Subiendo…' : logo() ? 'Cambiar' : 'Subir logo' }}
+                </label>
+                @if (logo()) { <button type="button" class="btn btn-ghost" (click)="quitarImagen('logo')">Quitar</button> }
+              </div>
+            </div>
+          </div>
+
+          <div class="campo">
+            <span>Portada</span>
+            <div class="imagen imagen--portada">
+              <div class="imagen__muestra imagen__muestra--portada">
+                @if (portada(); as src) { <img [src]="src" alt="Portada actual" /> } @else { <small>Una foto de tu gimnasio, horizontal</small> }
+              </div>
+              <div class="imagen__acciones">
+                <label class="btn btn-outline">
+                  <input type="file" accept="image/png,image/jpeg,image/webp" hidden (change)="elegirImagen('banner', $event)" />
+                  {{ subiendo() === 'banner' ? 'Subiendo…' : portada() ? 'Cambiar' : 'Subir portada' }}
+                </label>
+                @if (portada()) { <button type="button" class="btn btn-ghost" (click)="quitarImagen('banner')">Quitar</button> }
+              </div>
+            </div>
+          </div>
+
+          <div class="campo">
+            <span>Color de tu marca</span>
+            <div class="fila">
+              <input type="color" class="color" aria-label="Color de tu marca"
+                     [ngModel]="colorForm()" (ngModelChange)="colorForm.set($event)" />
+              <code>{{ colorForm() }}</code>
+              <button type="button" class="btn btn-outline" (click)="guardarColor()">Usar este color</button>
+            </div>
+            <small class="ayuda">Si es muy claro, la página lo oscurece lo justo para que los textos se lean.</small>
+          </div>
+
+          <div class="campo">
+            <span>Dirección de tu página</span>
+            <div class="fila">
+              <span class="prefijo">…/gym/t/</span>
+              <input class="input" [ngModel]="slugForm()" (ngModelChange)="slugForm.set($event)"
+                     placeholder="titan-gym" aria-label="Dirección de tu página" />
+              <button type="button" class="btn btn-outline" (click)="guardarSlug()" [disabled]="!slugForm().trim()">Guardar</button>
+            </div>
+            <small class="ayuda">Minúsculas, números y guiones. Es lo que vas a compartir en redes.</small>
+          </div>
+        </article>
+
+        <!-- Contenido -->
+        <article class="card">
+          <h3>Qué dice</h3>
+          <label class="campo">
+            Frase corta
+            <input class="input" maxlength="120" placeholder="Ej: Entrena cerca de casa, sin excusas"
+                   [ngModel]="form().frase" (ngModelChange)="campo('frase', $event)" />
+          </label>
+          <label class="campo">
+            Sobre tu gimnasio
+            <textarea class="textarea" rows="4" maxlength="1200"
+                      placeholder="Qué los hace distintos: máquinas, entrenadores, ambiente…"
+                      [ngModel]="form().descripcion" (ngModelChange)="campo('descripcion', $event)"></textarea>
+          </label>
+          <label class="campo">
+            Qué encuentran (uno por línea)
+            <textarea class="textarea" rows="4" maxlength="1200" placeholder="Zona de pesas&#10;Cardio&#10;Clases de spinning"
+                      [ngModel]="form().servicios" (ngModelChange)="campo('servicios', $event)"></textarea>
+          </label>
+          <label class="campo">
+            Horario
+            <textarea class="textarea" rows="3" maxlength="600" placeholder="Lunes a viernes: 5:00 a. m. – 10:00 p. m.&#10;Sábados: 7:00 a. m. – 2:00 p. m."
+                      [ngModel]="form().horario_texto" (ngModelChange)="campo('horario_texto', $event)"></textarea>
+          </label>
+          <label class="campo">
+            Créditos de las fotos
+            <textarea class="textarea" rows="2" maxlength="1500"
+                      placeholder="Solo si usas fotos de bancos libres (Wikimedia, Unsplash…): autor y licencia"
+                      [ngModel]="form().creditos_fotos" (ngModelChange)="campo('creditos_fotos', $event)"></textarea>
+          </label>
+          <small class="ayuda">Los planes salen solos desde Planes y los productos desde Productos; ahí eliges qué se muestra.</small>
+        </article>
+
+        <!-- Contacto -->
+        <article class="card">
+          <h3>Contacto</h3>
+          <label class="campo">
+            WhatsApp *
+            <input class="input" type="tel" placeholder="300 123 4567"
+                   [ngModel]="form().whatsapp" (ngModelChange)="campo('whatsapp', $event)" />
+          </label>
+          <label class="campo">
+            Dirección
+            <input class="input" placeholder="Calle 18 # 25-40, Pasto"
+                   [ngModel]="form().direccion" (ngModelChange)="campo('direccion', $event)" />
+          </label>
+          <label class="campo">
+            Enlace de Google Maps
+            <input class="input" type="url" placeholder="https://maps.app.goo.gl/…"
+                   [ngModel]="form().mapa_url" (ngModelChange)="campo('mapa_url', $event)" />
+          </label>
+          <div class="grid-form">
+            <label class="campo">
+              Instagram
+              <input class="input" placeholder="https://instagram.com/…"
+                     [ngModel]="form().url_instagram" (ngModelChange)="campo('url_instagram', $event)" />
+            </label>
+            <label class="campo">
+              Facebook
+              <input class="input" placeholder="https://facebook.com/…"
+                     [ngModel]="form().url_facebook" (ngModelChange)="campo('url_facebook', $event)" />
+            </label>
+            <label class="campo full">
+              TikTok
+              <input class="input" placeholder="https://tiktok.com/@…"
+                     [ngModel]="form().url_tiktok" (ngModelChange)="campo('url_tiktok', $event)" />
+            </label>
+          </div>
+        </article>
+      </div>
+
+      <!-- Solo aparece con cambios: siempre visible tapaba los últimos campos de las tarjetas. -->
+      @if (hayCambios()) {
+        <div class="barra-guardar barra-guardar--activa" role="status">
+          <span>Tienes cambios sin guardar</span>
+          <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      }
     }
-  </article>
+  }
+
+  <!-- ══════════ DATOS SENSIBLES ══════════ -->
+  @if (seccion() === 'datos') {
+    <article class="card">
+      <div class="card__cabeza">
+        <span class="card__icono" aria-hidden="true"><lucide-icon name="shield-check" [size]="20" /></span>
+        <div>
+          <h3>Autorizaciones de datos sensibles</h3>
+          <p class="muted">
+            La huella y los datos de salud son datos sensibles (Ley 1581 de 2012). Solo se guardan si
+            el miembro lo autoriza en su ficha, y siempre puede entrar con cédula o QR sin dar su huella.
+          </p>
+        </div>
+      </div>
+
+      @if (errorTextos()) {
+        <p class="error">No se pudieron cargar los textos.</p>
+      } @else if (textos().length === 0) {
+        <p class="muted">Cargando…</p>
+      } @else {
+        <div class="textos">
+          @for (t of textos(); track t.tipo) {
+            <section class="texto">
+              <header>
+                <lucide-icon [name]="t.tipo === 'BIOMETRIA' ? 'fingerprint' : 'file-text'" [size]="16" aria-hidden="true" />
+                <strong>{{ t.titulo }}</strong>
+                <small>versión {{ t.version }}</small>
+              </header>
+              <p>{{ t.texto }}</p>
+            </section>
+          }
+        </div>
+        <p class="nota">
+          <lucide-icon name="info" [size]="14" aria-hidden="true" />
+          Cada autorización queda registrada con la fecha, este texto y quién la anotó. Se da o se
+          revoca desde Miembros → botón del escudo.
+        </p>
+      }
+    </article>
+
+    @if (paletasActivas) {
+      <article class="card">
+        <h3>Color del panel</h3>
+        <div class="paletas">
+          @for (p of palette.paletas(); track p.id_paleta) {
+            <button class="paleta" type="button" (click)="seleccionarPaleta(p)"
+                    [class.active]="esActiva(p)" [disabled]="guardandoPaleta() === p.id_paleta">
+              <strong>{{ p.nombre }}</strong>
+            </button>
+          }
+        </div>
+      </article>
+    }
+  }
 </section>

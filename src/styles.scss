@@ -1,1 +1,8 @@
+/* Identidad de EscalApp (tokens + base) */
 @use './styles/theme';
+/* Piezas de página compartidas: título, tablas, ventanas, pastillas */
+@use './styles/pagina';
+/* Pestañas (secciones) y filtros: copia de restaurante_app — si se cambia uno, se cambia el otro */
+@use './styles/pestanas';
+/* Interruptor sí/no: copia de restaurante_app */
+@use './styles/interruptor';

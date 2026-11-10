@@ -4,25 +4,24 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
+import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
-import { Asistencia, Miembro } from '../../core/models';
+import { Asistencia, MetodoIngreso, Miembro } from '../../core/models';
 
 type ModoIngreso = 'CEDULA' | 'QR';
 
 /**
- * Vista "Ingreso" — antes "Asistencias". Identifica al miembro por:
- *   1. Cédula (num_identificacion) — modo principal.
- *   2. Código QR — alternativo.
+ * Ingreso — la recepción registra quién entra, por cédula o por código QR, y ve quién está dentro.
  *
- * Si el navegador soporta WebAuthn (Windows Hello / Touch ID en el dispositivo
- * del operador), pide confirmación biométrica antes de registrar la entrada.
- * Esto autentica al OPERADOR, no al miembro — para identificación biométrica
- * del miembro hace falta hardware dedicado integrado vía agente nativo.
+ * 2026-11-09: se retiró la «confirmación biométrica» con WebAuthn. Pedía Windows Hello o Touch ID
+ * al COMPUTADOR de recepción, así que verificaba al cajero, no al miembro, y aun así guardaba el
+ * ingreso como HUELLA. Los métodos HUELLA y FACIAL quedan para el lector del gimnasio, que los
+ * registrará a través del programa de EscalApp para PC (docs/gym-biometria.md, en el backend).
  */
 @Component({
   selector: 'gym-ingreso',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, DatePipe],
+  imports: [FormsModule, LucideAngularModule, DatePipe, EtiquetaPipe],
   templateUrl: './asistencias.html',
   styleUrl: './asistencias.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,81 +46,76 @@ export class AsistenciasComponent implements OnInit {
   private debounce?: ReturnType<typeof setTimeout>;
 
   readonly negocio = computed(() => this.auth.negocio());
-  readonly soportaBiometria = signal(false);
+  readonly dentro = computed(() => this.asistencias().filter((a) => !a.fecha_salida).length);
 
   ngOnInit(): void {
-    this.detectarBiometria();
     this.cargar();
   }
 
-  private async detectarBiometria(): Promise<void> {
-    if (typeof window === 'undefined' || !('PublicKeyCredential' in window)) return;
-    try {
-      const Pkc = (window as unknown as { PublicKeyCredential: { isUserVerifyingPlatformAuthenticatorAvailable?: () => Promise<boolean> } }).PublicKeyCredential;
-      const supported = await Pkc.isUserVerifyingPlatformAuthenticatorAvailable?.();
-      this.soportaBiometria.set(Boolean(supported));
-    } catch {
-      this.soportaBiometria.set(false);
-    }
+  cambiarModo(m: ModoIngreso): void {
+    this.modo.set(m);
+    this.inputValor.set('');
+    this.mensaje.set(null);
   }
 
   cargar(): void {
     const id = this.negocio()?.id_negocio;
     if (!id) return;
     this.cargando.set(true);
-    this.api.listarAsistencias({
-      idNegocio: id,
-      desde: this.desde() || undefined,
-      hasta: this.hasta() || undefined,
-      page: 1,
-    }).subscribe({
-      next: (res) => {
-        this.asistencias.set(res?.data?.rows ?? []);
-        this.total.set(res?.data?.total ?? 0);
-        this.cargando.set(false);
-      },
-      error: () => this.cargando.set(false),
-    });
+    this.api
+      .listarAsistencias({
+        idNegocio: id,
+        desde: this.desde() || undefined,
+        hasta: this.hasta() || undefined,
+        page: 1,
+      })
+      .subscribe({
+        next: (res) => {
+          this.asistencias.set(res?.data?.rows ?? []);
+          this.total.set(res?.data?.total ?? 0);
+          this.cargando.set(false);
+        },
+        error: () => this.cargando.set(false),
+      });
   }
 
-  /** Busca miembro por modo (cédula o QR) y registra entrada. */
+  /** Busca al miembro por cédula o QR y registra la entrada. */
   registrar(): void {
     const valor = this.inputValor().trim();
-    if (!valor) return;
     const id = this.negocio()?.id_negocio;
-    if (!id) return;
+    if (!valor || !id) return;
 
-    this.procesando.set(true); this.mensaje.set(null);
-    const buscar$ = this.modo() === 'QR'
-      ? this.api.getMiembroPorQr(valor, id)
-      : this.api.getMiembroPorIdentificacion(valor, id);
+    const porQr = this.modo() === 'QR';
+    const noEncontrado = porQr ? `No hay ningún miembro con el código ${valor}.` : `No hay ningún miembro con la cédula ${valor}.`;
+    this.procesando.set(true);
+    this.mensaje.set(null);
+    const buscar$ = porQr ? this.api.getMiembroPorQr(valor, id) : this.api.getMiembroPorIdentificacion(valor, id);
 
     buscar$.subscribe({
       next: (res) => {
         const m = res?.data;
         if (!m) {
           this.procesando.set(false);
-          this.mensaje.set({ tipo: 'err', texto: this.modo() === 'QR'
-            ? `Código no encontrado: ${valor}`
-            : `Cédula no encontrada: ${valor}` });
+          this.mensaje.set({ tipo: 'err', texto: noEncontrado });
           return;
         }
-        void this.confirmarYRegistrar(m);
+        this.entrarMiembro(m, porQr ? 'QR' : 'CEDULA');
       },
       error: () => {
         this.procesando.set(false);
-        this.mensaje.set({ tipo: 'err', texto: this.modo() === 'QR'
-          ? `Código no encontrado: ${valor}`
-          : `Cédula no encontrada: ${valor}` });
+        this.mensaje.set({ tipo: 'err', texto: noEncontrado });
       },
     });
   }
 
-  /** Búsqueda libre como fallback (autocompletar). */
+  /** Búsqueda por nombre para quien no trae la cédula ni el QR. */
   buscarMiembros(q: string): void {
     this.busquedaMiembro.set(q);
     if (this.debounce) clearTimeout(this.debounce);
-    if (q.trim().length < 2) { this.miembrosBusqueda.set([]); return; }
+    if (q.trim().length < 2) {
+      this.miembrosBusqueda.set([]);
+      return;
+    }
     this.debounce = setTimeout(() => {
       const id = this.negocio()?.id_negocio;
       if (!id) return;
@@ -132,62 +126,22 @@ export class AsistenciasComponent implements OnInit {
   }
 
   seleccionarMiembroManual(m: Miembro): void {
-    this.busquedaMiembro.set(''); this.miembrosBusqueda.set([]);
-    void this.confirmarYRegistrar(m);
+    this.busquedaMiembro.set('');
+    this.miembrosBusqueda.set([]);
+    this.entrarMiembro(m, 'MANUAL');
   }
 
-  /** Si hay biometría, pide WebAuthn antes de registrar. */
-  private async confirmarYRegistrar(m: Miembro): Promise<void> {
-    let metodo: 'QR' | 'MANUAL' | 'HUELLA' = this.modo() === 'QR' ? 'QR' : 'MANUAL';
-    if (this.soportaBiometria()) {
-      const okBio = await this.confirmarConHuella(m);
-      if (okBio === false) {
-        this.procesando.set(false);
-        this.mensaje.set({ tipo: 'warn', texto: 'Confirmación biométrica cancelada.' });
-        return;
-      }
-      if (okBio === true) metodo = 'HUELLA';
-    }
-    this.entrarMiembro(m, metodo);
-  }
-
-  /**
-   * Reta una credencial de plataforma (Windows Hello / Touch ID).
-   * Devuelve true si el operador confirmó, false si canceló, null si no se puede usar.
-   */
-  private async confirmarConHuella(_m: Miembro): Promise<boolean | null> {
-    try {
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-      const cred = await navigator.credentials.get({
-        publicKey: {
-          challenge,
-          timeout: 30_000,
-          userVerification: 'preferred',
-          rpId: window.location.hostname,
-        },
-        mediation: 'optional',
-      } as CredentialRequestOptions);
-      return Boolean(cred);
-    } catch (err) {
-      const e = err as { name?: string };
-      if (e?.name === 'NotAllowedError') return false;
-      return null;
-    }
-  }
-
-  private entrarMiembro(m: Miembro, metodo: 'QR' | 'MANUAL' | 'HUELLA'): void {
+  private entrarMiembro(m: Miembro, metodo: MetodoIngreso): void {
     const id = this.negocio()?.id_negocio;
     if (!id) return;
     this.procesando.set(true);
     this.api.registrarEntrada({ id_negocio: id, id_miembro: m.id_miembro, metodo }).subscribe({
       next: (res) => {
         this.procesando.set(false);
-        const data = res?.data;
-        if (data?.ya_estaba_dentro) {
+        if (res?.data?.ya_estaba_dentro) {
           this.mensaje.set({ tipo: 'warn', texto: `${m.primer_nombre} ya estaba dentro.` });
         } else {
-          this.mensaje.set({ tipo: 'ok', texto: `Bienvenido, ${m.primer_nombre} ${m.primer_apellido} (${metodo})` });
+          this.mensaje.set({ tipo: 'ok', texto: `Bienvenido, ${m.primer_nombre} ${m.primer_apellido}.` });
         }
         this.inputValor.set('');
         this.cargar();
@@ -197,7 +151,7 @@ export class AsistenciasComponent implements OnInit {
         const code = err?.error?.errors?.code;
         let texto = err?.error?.message || 'No se pudo registrar la entrada.';
         if (code === 'MEMBRESIA_VENCIDA') texto = `${m.primer_nombre} no tiene una membresía vigente.`;
-        if (code === 'MIEMBRO_BLOQUEADO') texto = `${m.primer_nombre} está bloqueado.`;
+        if (code === 'MIEMBRO_BLOQUEADO') texto = `${m.primer_nombre} está suspendido o inactivo.`;
         this.mensaje.set({ tipo: 'err', texto });
         this.inputValor.set('');
       },
@@ -213,7 +167,8 @@ export class AsistenciasComponent implements OnInit {
   formatDuracion(min: number | null): string {
     if (min == null) return '—';
     if (min < 60) return `${min} min`;
-    const h = Math.floor(min / 60); const m = min % 60;
-    return `${h}h ${m}m`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m ? `${h} h ${m} min` : `${h} h`;
   }
 }
