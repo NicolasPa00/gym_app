@@ -11,20 +11,22 @@ import {
   PaletaColor,
   PaletteService,
 } from '../../core/theme/palette.service';
+import { LectoresComponent } from './lectores/lectores';
 import { reducirImagen } from './reducir-imagen';
 
-type Seccion = 'pagina' | 'datos';
+type Seccion = 'pagina' | 'datos' | 'lectores';
 type Aviso = { tipo: 'ok' | 'err'; texto: string } | null;
 
 /**
  * Configuración del gimnasio:
  *  · «Mi página»: la página pública (`/t/:slug`), con su logo, portada, color, textos y contacto.
  *  · «Datos sensibles»: los textos de autorización que firma cada miembro (Ley 1581).
+ *  · «Lectores»: los lectores de huella de la puerta (lectores/).
  */
 @Component({
   selector: 'gym-configuracion',
   standalone: true,
-  imports: [LucideAngularModule, FormsModule],
+  imports: [LucideAngularModule, FormsModule, LectoresComponent],
   templateUrl: './configuracion.html',
   styleUrl: './configuracion.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

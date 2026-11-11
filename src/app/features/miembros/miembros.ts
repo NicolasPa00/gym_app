@@ -8,11 +8,13 @@ import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
 import {
   AutorizacionesMiembro,
+  EstadoMiembroLector,
   Miembro,
   NuevoMiembro,
   TextoAutorizacion,
   TipoAutorizacion,
 } from '../../core/models';
+import { estadoMiembroEnLector } from '../configuracion/lectores/textos';
 
 /**
  * Miembros del gimnasio.
@@ -54,7 +56,10 @@ export class MiembrosComponent implements OnInit {
   // Ventana de autorizaciones de un miembro existente
   readonly fichaAut = signal<Miembro | null>(null);
   readonly autorizaciones = signal<AutorizacionesMiembro | null>(null);
+  /** Estado del miembro en cada lector (último comando que se le envió). */
+  readonly lectoresMiembro = signal<EstadoMiembroLector[]>([]);
   readonly cargandoAut = signal(false);
+  readonly cargandoLectores = signal(false);
   readonly guardandoAut = signal<TipoAutorizacion | null>(null);
   readonly errorAut = signal<string | null>(null);
   /** Revocar pide un segundo toque: revocar SALUD borra datos de la ficha. */
@@ -188,10 +193,12 @@ export class MiembrosComponent implements OnInit {
     this.enviando.set(true);
     this.errorForm.set(null);
     this.api.crearMiembro(payload).subscribe({
-      next: () => {
+      next: (r) => {
         this.enviando.set(false);
         this.modalAbierto.set(false);
         this.cargar();
+        // Con huella autorizada se muestra enseguida el número que se teclea en el lector.
+        if (this.autorizaBiometria() && r?.data?.id_miembro) this.abrirAutorizaciones(r.data);
       },
       error: (e) => {
         this.enviando.set(false);
@@ -223,6 +230,18 @@ export class MiembrosComponent implements OnInit {
     this.confirmarRevocar.set(null);
     if (!this.textos()) this.cargarTextos();
     this.cargandoAut.set(true);
+    this.lectoresMiembro.set([]);
+    this.cargandoLectores.set(true);
+    this.api.miembroEnLectores(m.id_miembro, id).subscribe({
+      next: (r) => {
+        this.lectoresMiembro.set(r?.data?.lectores ?? []);
+        this.cargandoLectores.set(false);
+      },
+      error: () => {
+        this.lectoresMiembro.set([]);
+        this.cargandoLectores.set(false);
+      },
+    });
     this.api.listarAutorizaciones(m.id_miembro, id).subscribe({
       next: (r) => {
         this.autorizaciones.set(r?.data ?? null);
@@ -233,6 +252,11 @@ export class MiembrosComponent implements OnInit {
         this.errorAut.set(e?.error?.message || 'No se pudieron cargar las autorizaciones.');
       },
     });
+  }
+
+  estadoLector(x: EstadoMiembroLector) {
+    // El texto lo dice el servidor; el tono sale del último comando.
+    return { texto: x.texto, tono: estadoMiembroEnLector(x.comando, x.estado).tono };
   }
 
   cerrarAutorizaciones(): void {

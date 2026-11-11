@@ -144,6 +144,28 @@
     color: var(--color-text-secondary);
   }
 
+  &__lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      font-size: var(--font-size-sm);
+      overflow-wrap: anywhere;
+    }
+
+    small {
+      color: var(--color-text-secondary);
+    }
+  }
+
   &__nota {
     font-size: var(--font-size-xs) !important;
     color: var(--color-text-muted) !important;

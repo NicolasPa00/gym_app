@@ -1,0 +1,231 @@
+<article class="card">
+  <div class="card__cabeza">
+    <span class="card__icono" aria-hidden="true"><lucide-icon name="fingerprint" [size]="20" /></span>
+    <div class="cabeza__texto">
+      <h3>Lectores de huella</h3>
+      <p class="muted">
+        Los lectores abren la puerta por su cuenta con la última lista de miembros al día. La huella se
+        guarda solo dentro del lector, nunca en EscalApp.
+      </p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="abrirAsistente()">
+      <lucide-icon name="plus" [size]="16" aria-hidden="true" /> Agregar lector
+    </button>
+  </div>
+
+  @if (aviso(); as a) {
+    <p class="msg" role="status" [class.ok]="a.tipo === 'ok'" [class.err]="a.tipo === 'err'">{{ a.texto }}</p>
+  }
+
+  @if (cargando()) {
+    <p class="muted">Cargando…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (activos().length === 0) {
+    <div class="vacio">
+      <lucide-icon name="fingerprint" [size]="32" aria-hidden="true" />
+      <strong>Todavía no tienes lectores</strong>
+      <p class="muted">
+        Agrega el lector de la puerta y EscalApp le va diciendo quién puede entrar. Si no tienes uno, el
+        ingreso sigue siendo con cédula o QR.
+      </p>
+    </div>
+  } @else {
+    <ul class="lista">
+      @for (l of activos(); track l.id_lector) {
+        <li class="lector" [class.lector--abierto]="detalle()?.id_lector === l.id_lector">
+          <div class="lector__fila">
+            <div class="lector__info">
+              <strong>{{ l.nombre }}</strong>
+              <span class="muted">
+                {{ nombreMarca(l.marca) }}{{ l.modelo ? ' · ' + l.modelo : '' }} · {{ conexion(l) }}
+              </span>
+            </div>
+            <span class="badge" [class.b-ok]="estado(l).tono === 'ok'" [class.b-warn]="estado(l).tono === 'warn'"
+                  [class.b-off]="estado(l).tono === 'off'">
+              <lucide-icon [name]="estado(l).tono === 'ok' ? 'wifi' : 'wifi-off'" [size]="12" aria-hidden="true" />
+              {{ estado(l).texto }}
+            </span>
+          </div>
+
+          <dl class="lector__datos">
+            <div>
+              <dt>Última marcación</dt>
+              <dd>{{ l.ultima_marcacion ? hace(l.ultima_marcacion) : 'Ninguna todavía' }}</dd>
+            </div>
+            <div>
+              <dt>Pendientes</dt>
+              <dd>{{ l.comandos_pendientes ?? 0 }}</dd>
+            </div>
+          </dl>
+
+          @if (confirmarPuerta() === l.id_lector) {
+            <p class="msg warn" role="status">
+              Abrir la puerta desde aquí no está comprobado con este modelo todavía. Toca «Abrir puerta» otra vez
+              si quieres intentarlo.
+            </p>
+          }
+          @if (confirmarQuitar() === l.id_lector) {
+            <p class="msg warn" role="status">
+              El lector deja de recibir cambios y desaparece de la lista; sus marcaciones anteriores se
+              conservan. Toca «Quitar» otra vez para confirmar.
+            </p>
+          }
+
+          @if (l.conexion === 'PUENTE' && !l.emparejado) {
+            <p class="msg warn" role="status">
+              El puente todavía no se ha emparejado. Genera un código y úsalo en el computador del gimnasio.
+            </p>
+          }
+          @if (codigoDe(); as cd) {
+            @if (cd.id === l.id_lector) {
+              <div class="codigo" aria-live="polite">
+                <span class="codigo__valor">{{ grupos(cd.codigo.codigo) }}</span>
+                <small>{{ vence(cd.codigo.vence, ahora()) }} · se usa una sola vez</small>
+              </div>
+            }
+          }
+
+          <div class="lector__acciones">
+            <button type="button" class="btn btn-outline" (click)="verDetalle(l)"
+                    [attr.aria-expanded]="detalle()?.id_lector === l.id_lector">
+              {{ detalle()?.id_lector === l.id_lector ? 'Ocultar detalle' : 'Ver detalle' }}
+            </button>
+            @if (puerta(l) !== 'no') {
+              <button type="button" class="btn btn-outline" [disabled]="ocupado() === l.id_lector" (click)="abrirPuerta(l)">
+                <lucide-icon name="door-open" [size]="16" aria-hidden="true" /> Abrir puerta
+              </button>
+            }
+            @if (l.conexion === 'PUENTE') {
+              <button type="button" class="btn btn-outline" [disabled]="ocupado() === l.id_lector" (click)="generarCodigo(l)">
+                Código de emparejamiento
+              </button>
+            }
+            @if (l.conexion !== 'SOLO_REGISTRO') {
+              <button type="button" class="btn btn-outline" [disabled]="ocupado() === l.id_lector" (click)="resincronizar(l)">
+                <lucide-icon name="refresh-cw" [size]="16" aria-hidden="true" /> Resincronizar
+              </button>
+            }
+            <button type="button" class="btn btn-ghost" (click)="editar(l)">
+              <lucide-icon name="pencil" [size]="16" aria-hidden="true" /> Editar
+            </button>
+            <button type="button" class="btn btn-ghost" [disabled]="ocupado() === l.id_lector" (click)="quitar(l)">
+              <lucide-icon name="x" [size]="16" aria-hidden="true" />
+              {{ confirmarQuitar() === l.id_lector ? 'Confirmar: quitar' : 'Quitar' }}
+            </button>
+          </div>
+
+          @if (detalle()?.id_lector === l.id_lector) {
+            <div class="detalle">
+              @if (cargandoDetalle()) {
+                <p class="muted">Cargando…</p>
+              }
+              <section>
+                <h4>Últimas marcaciones</h4>
+                @if (marcaciones().length === 0 && !cargandoDetalle()) {
+                  <p class="muted">Este lector todavía no ha reportado marcaciones.</p>
+                } @else {
+                  <ul class="historial">
+                    @for (m of marcaciones(); track m.id_marcacion) {
+                      <li>
+                        <span class="historial__hora">{{ m.fecha_evento | date: 'd MMM, h:mm a' }}</span>
+                        <span class="historial__texto">
+                          <strong>{{ m.miembro || 'Número ' + m.pin }}</strong>
+                          <small>{{ verificacion(m.verificacion) }}</small>
+                        </span>
+                        <span class="badge" [class.b-ok]="resultado(m.resultado).tono === 'ok'"
+                              [class.b-warn]="resultado(m.resultado).tono === 'warn'"
+                              [class.b-off]="resultado(m.resultado).tono === 'off'">
+                          {{ resultado(m.resultado).texto }}
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </section>
+              <section>
+                <h4>Últimos comandos</h4>
+                @if (comandos().length === 0 && !cargandoDetalle()) {
+                  <p class="muted">Todavía no se le ha enviado nada.</p>
+                } @else {
+                  <ul class="historial">
+                    @for (c of comandos(); track c.id_comando) {
+                      <li>
+                        <span class="historial__hora">{{ c.creado_en | date: 'd MMM, h:mm a' }}</span>
+                        <span class="historial__texto">
+                          <strong>{{ tipoComando(c.tipo) }}</strong>
+                          @if (c.id_miembro) { <small>Miembro n.º {{ c.id_miembro }}</small> }
+                        </span>
+                        <span class="badge" [class.b-ok]="estadoComando(c.estado).tono === 'ok'"
+                              [class.b-warn]="estadoComando(c.estado).tono === 'warn'"
+                              [class.b-off]="estadoComando(c.estado).tono === 'off'">
+                          {{ estadoComando(c.estado).texto }}
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                }
+              </section>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</article>
+
+@if (asistente(); as _) {
+  @if (idNegocio(); as id) {
+    <gym-agregar-lector [idNegocio]="id" [catalogo]="catalogo()" (cerrar)="cerrarAsistente()" (cambio)="cargar(true)" />
+  }
+}
+
+@if (editando(); as l) {
+  <div class="modal" (click)="cerrarEdicion()">
+    <div class="modal__panel" role="dialog" aria-labelledby="titulo-editar-lector" (click)="$event.stopPropagation()">
+      <h2 id="titulo-editar-lector">Editar lector</h2>
+      <div class="campo">
+        <label for="ed-nombre">Nombre</label>
+        <input id="ed-nombre" class="input" maxlength="80" [ngModel]="formEdicion().nombre"
+               (ngModelChange)="campoEdicion('nombre', $event)" />
+      </div>
+      @if (l.conexion === 'ZK_ADMS') {
+        <div class="campo">
+          <label for="ed-serie">Número de serie</label>
+          <input id="ed-serie" class="input" [ngModel]="formEdicion().serie" (ngModelChange)="campoEdicion('serie', $event)" />
+        </div>
+      }
+      @if (l.conexion === 'PUENTE') {
+        <div class="grid-form">
+          <div class="campo">
+            <label for="ed-ip">Dirección IP</label>
+            <input id="ed-ip" class="input" [ngModel]="formEdicion().ip" (ngModelChange)="campoEdicion('ip', $event)" />
+          </div>
+          <div class="campo">
+            <label for="ed-puerto">Puerto</label>
+            <input id="ed-puerto" class="input" inputmode="numeric" [ngModel]="formEdicion().puerto"
+                   (ngModelChange)="campoEdicion('puerto', $event)" />
+          </div>
+          <div class="campo">
+            <label for="ed-usuario">Usuario</label>
+            <input id="ed-usuario" class="input" autocomplete="off" [ngModel]="formEdicion().usuario"
+                   (ngModelChange)="campoEdicion('usuario', $event)" />
+          </div>
+          <div class="campo">
+            <label for="ed-clave">Clave nueva</label>
+            <input id="ed-clave" class="input" type="password" autocomplete="new-password"
+                   [placeholder]="l.tiene_clave ? 'Ya hay una guardada: déjala vacía para no cambiarla' : 'Sin clave guardada'" [ngModel]="formEdicion().clave"
+                   (ngModelChange)="campoEdicion('clave', $event)" />
+          </div>
+        </div>
+      }
+      @if (errorEdicion(); as e) { <p class="error">{{ e }}</p> }
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" [disabled]="guardandoEdicion()" (click)="cerrarEdicion()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="guardandoEdicion()" (click)="guardarEdicion()">
+          {{ guardandoEdicion() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

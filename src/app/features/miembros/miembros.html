@@ -71,6 +71,7 @@
                   <span class="badge b-primary">
                     <lucide-icon name="fingerprint" [size]="12" aria-hidden="true" /> Autorizada
                   </span>
+                  <small class="muted num-lector">N.º en el lector: {{ m.id_miembro }}</small>
                 } @else {
                   <span class="muted">Cédula o QR</span>
                 }
@@ -225,6 +226,7 @@
           <p class="autorizacion__nota">
             <lucide-icon name="info" [size]="14" aria-hidden="true" />
             Si no la autoriza, entra con su cédula o su código QR. Nada cambia en el servicio.
+            Al guardar verás el número con el que se registra en el lector.
           </p>
         </div>
       </div>
@@ -252,6 +254,12 @@
         <h2 id="titulo-aut">Datos sensibles de {{ m.primer_nombre }} {{ m.primer_apellido }}</h2>
         <p class="hint">Cada cambio queda registrado con fecha, el texto aceptado y quién lo anotó.</p>
       </div>
+
+      <p class="num-lector-caja">
+        <lucide-icon name="fingerprint" [size]="16" aria-hidden="true" />
+        <span>Número en el lector: <strong>{{ m.id_miembro }}</strong></span>
+        <small>Es el que se teclea en el lector al registrar su huella.</small>
+      </p>
 
       @if (cargandoAut()) {
         <p class="muted">Cargando…</p>
@@ -289,6 +297,29 @@
               </button>
             }
           </div>
+        }
+
+        @if (autorizaciones()!.autoriza_biometria || lectoresMiembro().length > 0 || cargandoLectores()) {
+          <section class="en-lectores" aria-label="Estado en los lectores">
+            <h3>En los lectores</h3>
+            @if (cargandoLectores()) {
+              <p class="muted">Cargando…</p>
+            } @else if (lectoresMiembro().length === 0) {
+              <p class="muted">Todavía no hay lectores configurados en Configuración → Lectores.</p>
+            } @else {
+              <ul>
+                @for (x of lectoresMiembro(); track x.id_lector) {
+                  <li>
+                    <strong>{{ x.nombre || 'Lector ' + x.id_lector }}</strong>
+                    <span class="badge" [class.b-ok]="estadoLector(x).tono === 'ok'"
+                          [class.b-warn]="estadoLector(x).tono === 'warn'" [class.b-off]="estadoLector(x).tono === 'off'">
+                      {{ estadoLector(x).texto }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
         }
 
         @if (autorizaciones()!.historial.length > 0) {

@@ -1,12 +1,16 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import {
+  ChangeDetectionStrategy, Component, DestroyRef, OnInit, PLATFORM_ID, computed, inject, signal,
+} from '@angular/core';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 
 import { AuthService } from '../../core/services/auth.service';
 import { EtiquetaPipe } from '../../core/etiqueta.pipe';
 import { GymApiService } from '../../core/services/gym-api.service';
-import { Asistencia, MetodoIngreso, Miembro } from '../../core/models';
+import { Asistencia, Lector, MetodoIngreso, Miembro } from '../../core/models';
+import { estadoEnPalabras, resumenLectores } from '../configuracion/lectores/textos';
 
 type ModoIngreso = 'CEDULA' | 'QR';
 
@@ -17,11 +21,14 @@ type ModoIngreso = 'CEDULA' | 'QR';
  * al COMPUTADOR de recepción, así que verificaba al cajero, no al miembro, y aun así guardaba el
  * ingreso como HUELLA. Los métodos HUELLA y FACIAL quedan para el lector del gimnasio, que los
  * registrará a través del programa de EscalApp para PC (docs/gym-biometria.md, en el backend).
+ *
+ * 2026-11-11: la tarjeta «Lector de huella» muestra el estado real de los lectores configurados en
+ * Configuración → Lectores (docs/gym-lectores-biometricos.md).
  */
 @Component({
   selector: 'gym-ingreso',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, DatePipe, EtiquetaPipe],
+  imports: [FormsModule, LucideAngularModule, DatePipe, EtiquetaPipe, RouterLink],
   templateUrl: './asistencias.html',
   styleUrl: './asistencias.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +36,19 @@ type ModoIngreso = 'CEDULA' | 'QR';
 export class AsistenciasComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly api = inject(GymApiService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Lectores de huella del gimnasio; se refrescan cada 15 s solo en el navegador. */
+  readonly lectores = signal<Lector[]>([]);
+  readonly lectoresCargados = signal(false);
+  readonly ahora = signal(Date.now());
+  readonly resumenLector = computed(() => resumenLectores(this.lectores(), this.ahora()));
+  readonly lectoresActivos = computed(() => this.lectores().filter((l) => l.estado !== 'INACTIVO'));
+  /** Las últimas entradas que registró un lector (huella, rostro o tarjeta). */
+  readonly entradasLector = computed(() =>
+    this.asistencias().filter((a) => ['HUELLA', 'FACIAL', 'TARJETA'].includes(a.metodo)).slice(0, 3),
+  );
 
   readonly asistencias = signal<Asistencia[]>([]);
   readonly cargando = signal(false);
@@ -50,6 +70,31 @@ export class AsistenciasComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.cargarLectores();
+    if (isPlatformBrowser(this.platformId)) {
+      const t = setInterval(() => {
+        this.cargarLectores();
+        this.cargar(true);
+      }, 15000);
+      this.destroyRef.onDestroy(() => clearInterval(t));
+    }
+  }
+
+  estadoLector(l: Lector) {
+    return estadoEnPalabras(l, this.ahora());
+  }
+
+  private cargarLectores(): void {
+    const id = this.negocio()?.id_negocio;
+    if (!id) return;
+    this.api.listarLectores(id).subscribe({
+      next: (r) => {
+        this.lectores.set(r?.data ?? []);
+        this.lectoresCargados.set(true);
+        this.ahora.set(Date.now());
+      },
+      error: () => this.lectoresCargados.set(true),
+    });
   }
 
   cambiarModo(m: ModoIngreso): void {
@@ -58,10 +103,10 @@ export class AsistenciasComponent implements OnInit {
     this.mensaje.set(null);
   }
 
-  cargar(): void {
+  cargar(silencioso = false): void {
     const id = this.negocio()?.id_negocio;
     if (!id) return;
-    this.cargando.set(true);
+    if (!silencioso) this.cargando.set(true);
     this.api
       .listarAsistencias({
         idNegocio: id,

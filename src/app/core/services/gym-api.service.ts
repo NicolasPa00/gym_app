@@ -6,7 +6,8 @@ import { environment } from '../../../environments/environment';
 import {
   ApiResponse, Paginated, Miembro, NuevoMiembro, TextoAutorizacion, TipoAutorizacion,
   AutorizacionesMiembro, AutorizacionFila, MetodoIngreso, PaginaConfig, MarcaGimnasio, Plan, Membresia, Pago, Asistencia, ResumenDashboard,
-  Producto, Venta,
+  Producto, Venta, CatalogoLectores, Lector, NuevoLector, ComandoLector, MarcacionLector,
+  CodigoEmparejamiento, MiembroEnLectores, LectorDesconocido,
 } from '../models';
 
 /**
@@ -69,6 +70,56 @@ export class GymApiService {
   cambiarEstadoMiembro(id: number, idNegocio: number, estado: Miembro['estado']) {
     return this.http.patch<ApiResponse<Miembro>>(
       `${this.base}/miembros/${id}/estado`, { id_negocio: idNegocio, estado },
+    );
+  }
+
+  // ── Lectores biométricos ──
+  catalogoLectores(idNegocio: number) {
+    return this.http.get<ApiResponse<CatalogoLectores>>(`${this.base}/lectores/catalogo?id_negocio=${idNegocio}`);
+  }
+  listarLectores(idNegocio: number) {
+    return this.http.get<ApiResponse<Lector[]>>(`${this.base}/lectores?id_negocio=${idNegocio}`);
+  }
+  crearLector(idNegocio: number, data: NuevoLector) {
+    return this.http.post<ApiResponse<Lector>>(`${this.base}/lectores`, { ...data, id_negocio: idNegocio });
+  }
+  actualizarLector(id: number, idNegocio: number, data: Partial<NuevoLector>) {
+    return this.http.put<ApiResponse<Lector>>(`${this.base}/lectores/${id}`, { ...data, id_negocio: idNegocio });
+  }
+  quitarLector(id: number, idNegocio: number) {
+    return this.http.delete<ApiResponse<unknown>>(`${this.base}/lectores/${id}?id_negocio=${idNegocio}`);
+  }
+  codigoEmparejamiento(id: number, idNegocio: number) {
+    return this.http.post<ApiResponse<CodigoEmparejamiento>>(
+      `${this.base}/lectores/${id}/codigo-emparejamiento`, { id_negocio: idNegocio },
+    );
+  }
+  resincronizarLector(id: number, idNegocio: number) {
+    return this.http.post<ApiResponse<{ encolados: number }>>(
+      `${this.base}/lectores/${id}/resincronizar`, { id_negocio: idNegocio },
+    );
+  }
+  abrirPuertaLector(id: number, idNegocio: number) {
+    return this.http.post<ApiResponse<unknown>>(`${this.base}/lectores/${id}/abrir-puerta`, { id_negocio: idNegocio });
+  }
+  comandosLector(id: number, idNegocio: number, limit = 50) {
+    return this.http.get<ApiResponse<ComandoLector[]>>(
+      `${this.base}/lectores/${id}/comandos?id_negocio=${idNegocio}&limit=${limit}`,
+    );
+  }
+  marcacionesLector(id: number, idNegocio: number, limit = 50) {
+    return this.http.get<ApiResponse<MarcacionLector[]>>(
+      `${this.base}/lectores/${id}/marcaciones?id_negocio=${idNegocio}&limit=${limit}`,
+    );
+  }
+  lectoresDesconocidos(idNegocio: number) {
+    return this.http.get<ApiResponse<LectorDesconocido[]>>(
+      `${this.base}/lectores/desconocidos?id_negocio=${idNegocio}`,
+    );
+  }
+  miembroEnLectores(idMiembro: number, idNegocio: number) {
+    return this.http.get<ApiResponse<MiembroEnLectores>>(
+      `${this.base}/miembros/${idMiembro}/lector?id_negocio=${idNegocio}`,
     );
   }
 

@@ -1,0 +1,275 @@
+<div class="modal" (click)="terminar()">
+  <div class="modal__panel modal__panel--ancho" role="dialog" aria-labelledby="titulo-lector"
+       (click)="$event.stopPropagation()">
+    <div>
+      <h2 id="titulo-lector">Agregar lector</h2>
+      <p class="hint">Paso {{ paso() }} de 3</p>
+      <ol class="pasos" aria-hidden="true">
+        <li [class.pasos--on]="paso() >= 1"></li>
+        <li [class.pasos--on]="paso() >= 2"></li>
+        <li [class.pasos--on]="paso() >= 3"></li>
+      </ol>
+    </div>
+
+    <!-- ═════ PASO 1: marca y modelo ═════ -->
+    @if (paso() === 1) {
+      <div class="campo">
+        <label for="lec-marca">Marca del lector</label>
+        <select id="lec-marca" class="input" [ngModel]="b().noSe ? '__nose' : b().marca"
+                (ngModelChange)="$event === '__nose' ? noSeCual() : elegirMarca($event)">
+          <option value="" disabled>Elige la marca</option>
+          @for (m of catalogo()?.marcas ?? []; track m.marca) {
+            <option [value]="m.marca">{{ nombreMarca(m.marca) }}</option>
+          }
+          <option value="__nose">No sé cuál es</option>
+        </select>
+      </div>
+
+      @if (marca(); as m) {
+        <div class="campo">
+          <label for="lec-modelo">Modelo</label>
+          <select id="lec-modelo" class="input" [ngModel]="b().modelo" (ngModelChange)="elegirModelo($event)">
+            <option value="" disabled>Elige el modelo</option>
+            @for (mo of m.modelos; track mo.modelo) {
+              <option [value]="mo.modelo">{{ mo.modelo }}</option>
+            }
+            <option [value]="otroModelo">Otro modelo</option>
+          </select>
+        </div>
+        @if (b().modelo === otroModelo) {
+          <div class="campo">
+            <label for="lec-modelo-texto">Nombre del modelo</label>
+            <input id="lec-modelo-texto" class="input" maxlength="60" placeholder="Como dice la etiqueta"
+                   [ngModel]="b().modeloTexto" (ngModelChange)="campo('modeloTexto', $event)" />
+          </div>
+        }
+      }
+
+      @if (!catalogo()) {
+        <p class="muted">Cargando las marcas disponibles…</p>
+      }
+
+      @if (b().noSe) {
+        <div class="ayuda-caja">
+          <strong><lucide-icon name="info" [size]="16" aria-hidden="true" /> Cómo reconocer tu lector</strong>
+          <ol>
+            @for (t of ayudaEtiqueta; track t) { <li>{{ t }}</li> }
+          </ol>
+        </div>
+      }
+
+      <div class="modal__actions">
+        <button class="btn btn-ghost" type="button" (click)="terminar()">Cancelar</button>
+        <button class="btn btn-primary" type="button" [disabled]="!puedeSeguir1()" (click)="siguiente1()">
+          Siguiente
+        </button>
+      </div>
+    }
+
+    <!-- ═════ PASO 2: conexión ═════ -->
+    @if (paso() === 2) {
+      <div class="campo">
+        <label for="lec-nombre">Nombre del lector</label>
+        <input id="lec-nombre" class="input" maxlength="80" [placeholder]="nombrePlaceholder()"
+               [disabled]="!!creado()" [ngModel]="b().nombre" (ngModelChange)="campo('nombre', $event)" />
+      </div>
+
+      @if (conexiones().length > 1 && !creado()) {
+        <div class="campo">
+          <label for="lec-conexion">Cómo se conecta</label>
+          <select id="lec-conexion" class="input" [ngModel]="b().conexion" (ngModelChange)="elegirConexion($event)">
+            @for (c of conexiones(); track c) {
+              <option [value]="c">
+                {{ c === 'ZK_ADMS' ? 'Directo a internet (ADMS)' : c === 'PUENTE' ? 'Con el puente en el gimnasio' : 'Solo registro manual' }}
+              </option>
+            }
+          </select>
+        </div>
+      }
+
+      @switch (conexion()) {
+        @case ('ZK_ADMS') {
+          <div class="ayuda-caja">
+            <strong>En el lector</strong>
+            @if (pasos().length) {
+              <ol>
+                @for (t of pasos(); track t) { <li>{{ t }}</li> }
+              </ol>
+            } @else {
+              <p>Menú → Comunicación → ADMS (o «Servidor en la nube»).</p>
+            }
+            <dl class="datos">
+              <dt>Servidor</dt><dd><code>{{ servidor().host }}</code></dd>
+              <dt>Puerto</dt><dd><code>{{ servidor().puerto }}</code></dd>
+            </dl>
+            <p class="muted">Activa también la opción de usar nombre de dominio.</p>
+          </div>
+          <div class="campo">
+            <label for="lec-serie">Número de serie</label>
+            <input id="lec-serie" class="input" autocomplete="off" placeholder="Está en la etiqueta del lector"
+                   [ngModel]="b().serie" (ngModelChange)="campo('serie', $event)" />
+            @if (series().length) {
+              <div class="sugerencias" aria-label="Números de serie que ya llamaron a EscalApp">
+                <small>Ya llamaron a EscalApp:</small>
+                @for (s of series(); track s) {
+                  <button type="button" class="chip" (click)="campo('serie', s)">{{ s }}</button>
+                }
+              </div>
+            }
+          </div>
+        }
+        @case ('PUENTE') {
+          <div class="grid-form">
+            @if (drivers().length > 1) {
+              <div class="campo full">
+                <label for="lec-driver">Cómo habla el puente con el lector</label>
+                <select id="lec-driver" class="input" [disabled]="!!creado()" [ngModel]="b().driver"
+                        (ngModelChange)="campo('driver', $event)">
+                  @for (d of drivers(); track d.driver) {
+                    <option [value]="d.driver">{{ d.nombre }}</option>
+                  }
+                </select>
+              </div>
+            }
+            <div class="campo">
+              <label for="lec-ip">Dirección IP del lector</label>
+              <input id="lec-ip" class="input" inputmode="decimal" placeholder="192.168.1.50" [disabled]="!!creado()"
+                     [ngModel]="b().ip" (ngModelChange)="campo('ip', $event)" />
+            </div>
+            <div class="campo">
+              <label for="lec-puerto">Puerto (opcional)</label>
+              <input id="lec-puerto" class="input" inputmode="numeric" [disabled]="!!creado()"
+                     [placeholder]="puertoDefecto() ? 'Por defecto ' + puertoDefecto() : ''"
+                     [ngModel]="b().puerto" (ngModelChange)="campo('puerto', $event)" />
+            </div>
+            <div class="campo">
+              <label for="lec-usuario">Usuario del lector</label>
+              <input id="lec-usuario" class="input" autocomplete="off" [disabled]="!!creado()"
+                     [ngModel]="b().usuario" (ngModelChange)="campo('usuario', $event)" />
+            </div>
+            <div class="campo">
+              <label for="lec-clave">Clave del lector</label>
+              <input id="lec-clave" class="input" type="password" autocomplete="new-password" [disabled]="!!creado()"
+                     [ngModel]="b().clave" (ngModelChange)="campo('clave', $event)" />
+            </div>
+          </div>
+
+          @if (pideEstrategia()) {
+            <fieldset class="estrategia" [disabled]="!!creado()">
+              <legend>Cuando un miembro deja de estar al día</legend>
+              @for (e of estrategias(); track e.valor) {
+                <label class="estrategia__op">
+                  <input type="radio" name="estrategia" [value]="e.valor" [ngModel]="b().estrategia"
+                         (ngModelChange)="campo('estrategia', $event)" />
+                  <span>{{ e.descripcion }}</span>
+                </label>
+              }
+            </fieldset>
+          }
+
+          @if (creado()) {
+            <div class="ayuda-caja">
+              <strong>Instala el puente en el computador del gimnasio</strong>
+              @if (pasos().length) {
+                <ol>
+                  @for (t of pasos(); track t) { <li>{{ t }}</li> }
+                </ol>
+              } @else {
+                <p>
+                  El puente es un programa pequeño que queda corriendo en un computador del gimnasio
+                  que esté en la misma red que el lector. Al abrirlo te pide este código.
+                </p>
+              }
+              @if (codigo()) {
+                <div class="codigo" aria-live="polite">
+                  <span class="codigo__valor">{{ codigoGrande() }}</span>
+                  <small>{{ vence() }} · se usa una sola vez</small>
+                  <div class="codigo__acciones">
+                    <button class="btn btn-outline" type="button" (click)="copiarCodigo()">
+                      <lucide-icon [name]="copiado() ? 'check' : 'copy'" [size]="16" /> {{ copiado() ? 'Copiado' : 'Copiar' }}
+                    </button>
+                    <button class="btn btn-ghost" type="button" [disabled]="generandoCodigo()" (click)="generarCodigo()">
+                      <lucide-icon name="refresh-cw" [size]="16" /> Generar otro
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <button class="btn btn-primary" type="button" [disabled]="generandoCodigo()" (click)="generarCodigo()">
+                  {{ generandoCodigo() ? 'Generando…' : 'Generar código de emparejamiento' }}
+                </button>
+              }
+            </div>
+          }
+        }
+        @default {
+          <p class="msg warn" role="status">
+            Este lector no se conecta a EscalApp: queda anotado, pero la entrada de tus miembros la
+            sigues registrando en Ingreso, con cédula o QR. No va a abrir la puerta por sí solo.
+          </p>
+        }
+      }
+
+      @for (e of errores(); track e) { <p class="error">{{ e }}</p> }
+      @if (errorServidor(); as e) { <p class="error">{{ e }}</p> }
+
+      <div class="modal__actions">
+        @if (!creado()) {
+          <button class="btn btn-ghost" type="button" [disabled]="guardando()" (click)="atras()">Atrás</button>
+          <button class="btn btn-primary" type="button" [disabled]="guardando()" (click)="guardar()">
+            {{ guardando() ? 'Guardando…' : conexion() === 'PUENTE' ? 'Guardar y ver el código' : 'Guardar y seguir' }}
+          </button>
+        } @else {
+          <button class="btn btn-primary" type="button" [disabled]="!codigo()" (click)="irAlPaso3()">
+            Ya lo instalé, seguir
+          </button>
+        }
+      </div>
+    }
+
+    <!-- ═════ PASO 3: primer contacto ═════ -->
+    @if (paso() === 3) {
+      @if (conexion() === 'SOLO_REGISTRO') {
+        <p class="msg ok" role="status">
+          <lucide-icon name="circle-check" [size]="16" aria-hidden="true" />
+          Listo, el lector quedó anotado. Sigue registrando los ingresos en la pantalla Ingreso.
+        </p>
+      } @else {
+        @if (hizoContacto()) {
+          <p class="msg ok" role="status">
+            <lucide-icon name="circle-check" [size]="16" aria-hidden="true" />
+            ¡El lector ya llamó a EscalApp! {{ estadoVivo()?.texto }}.
+          </p>
+          <p class="muted">
+            Para que reconozca a tus miembros, envíale la lista de quienes autorizaron su huella. Cada
+            persona registra su huella en el teclado del lector con su número (lo ves en Miembros).
+          </p>
+          @if (enviado() === null) {
+            <button class="btn btn-primary" type="button" [disabled]="enviando()" (click)="enviarMiembros()">
+              {{ enviando() ? 'Enviando…' : 'Enviar miembros al lector' }}
+            </button>
+          } @else {
+            <p class="msg ok" role="status">
+              Se enviaron {{ enviado() }} {{ enviado() === 1 ? 'miembro' : 'miembros' }} al lector. Llegan en
+              unos segundos.
+            </p>
+          }
+        } @else {
+          <p class="msg warn" role="status" aria-live="polite">
+            <lucide-icon name="clock" [size]="16" aria-hidden="true" />
+            Esperando el primer contacto del lector… Puede tardar un par de minutos. Revisamos cada 5 segundos.
+          </p>
+          <p class="muted">
+            Si no llama, revisa que el lector tenga internet y que los datos del paso anterior estén bien. Puedes
+            cerrar esto: el lector queda en la lista como «Esperando el primer contacto».
+          </p>
+        }
+      }
+
+      @if (errorServidor(); as e) { <p class="error">{{ e }}</p> }
+
+      <div class="modal__actions">
+        <button class="btn btn-primary" type="button" (click)="terminar()">Terminar</button>
+      </div>
+    }
+  </div>
+</div>

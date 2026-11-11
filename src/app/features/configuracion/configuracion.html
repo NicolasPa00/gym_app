@@ -2,7 +2,7 @@
   <header class="page__head">
     <div>
       <h1>Configuración</h1>
-      <p>Tu página pública y cómo tratas los datos de tus miembros</p>
+      <p>Tu página pública, los datos de tus miembros y los lectores de huella</p>
     </div>
   </header>
 
@@ -14,6 +14,10 @@
     <button type="button" class="ui-pestana" [class.ui-pestana--on]="seccion() === 'datos'"
             [attr.aria-current]="seccion() === 'datos' ? 'page' : null" (click)="seccion.set('datos')">
       <lucide-icon name="shield-check" [size]="16" aria-hidden="true" /> Datos sensibles
+    </button>
+    <button type="button" class="ui-pestana" [class.ui-pestana--on]="seccion() === 'lectores'"
+            [attr.aria-current]="seccion() === 'lectores' ? 'page' : null" (click)="seccion.set('lectores')">
+      <lucide-icon name="fingerprint" [size]="16" aria-hidden="true" /> Lectores
     </button>
   </nav>
 
@@ -200,6 +204,11 @@
         </div>
       }
     }
+  }
+
+  <!-- ══════════ LECTORES ══════════ -->
+  @if (seccion() === 'lectores') {
+    <gym-lectores />
   }
 
   <!-- ══════════ DATOS SENSIBLES ══════════ -->

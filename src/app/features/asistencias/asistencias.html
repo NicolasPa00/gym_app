@@ -61,19 +61,46 @@
       </div>
     </div>
 
-    <!-- El lector de huella del gimnasio. Hoy solo informa: la conexión la hará el programa de
-         EscalApp para PC (docs/gym-biometria.md en el backend). -->
-    <aside class="card lector">
+    <!-- El lector de huella: estado real de los lectores de Configuración → Lectores. -->
+    <aside class="card lector" aria-live="polite">
       <span class="lector__icono" aria-hidden="true"><lucide-icon name="fingerprint" [size]="26" /></span>
       <h3>Lector de huella</h3>
-      <span class="badge b-off"><lucide-icon name="wifi-off" [size]="12" aria-hidden="true" /> Sin conectar</span>
-      <p>
-        Para que la puerta abra con la huella, el lector se conecta a EscalApp con un programa en el
-        computador de recepción. Mientras tanto, el ingreso es con cédula o QR.
-      </p>
-      <p class="lector__nota">
-        Solo se registra la huella de quien lo autoriza en su ficha de Miembros.
-      </p>
+      @if (!lectoresCargados()) {
+        <p>Revisando los lectores…</p>
+      } @else if (lectoresActivos().length === 0) {
+        <span class="badge b-off"><lucide-icon name="wifi-off" [size]="12" aria-hidden="true" /> Sin lectores configurados</span>
+        <p>
+          Con un lector, la puerta abre con la huella y las entradas llegan solas. Mientras tanto, el
+          ingreso es con cédula o QR.
+        </p>
+        <a class="btn btn-outline" routerLink="/configuracion">Configurar un lector</a>
+      } @else {
+        <span class="badge" [class.b-ok]="resumenLector().tono === 'ok'" [class.b-warn]="resumenLector().tono === 'warn'"
+              [class.b-off]="resumenLector().tono === 'off'">
+          <lucide-icon [name]="resumenLector().tono === 'ok' ? 'wifi' : 'wifi-off'" [size]="12" aria-hidden="true" />
+          {{ resumenLector().texto }}
+        </span>
+        <ul class="lector__lista">
+          @for (l of lectoresActivos(); track l.id_lector) {
+            <li>
+              <strong>{{ l.nombre }}</strong>
+              <small>{{ estadoLector(l).texto }}</small>
+            </li>
+          }
+        </ul>
+        @if (entradasLector().length) {
+          <p class="lector__nota">Últimas entradas por lector:</p>
+          <ul class="lector__lista">
+            @for (a of entradasLector(); track a.id_asistencia) {
+              <li>
+                <strong>{{ a.miembro?.primer_nombre }} {{ a.miembro?.primer_apellido }}</strong>
+                <small>{{ a.fecha_entrada | date: 'shortTime' }} · {{ a.metodo | etiqueta }}</small>
+              </li>
+            }
+          </ul>
+        }
+        <p class="lector__nota">Solo se registra la huella de quien lo autoriza en su ficha de Miembros.</p>
+      }
     </aside>
   </div>
 

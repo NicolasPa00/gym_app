@@ -173,7 +173,7 @@ export interface MarcaGimnasio {
 }
 
 /** HUELLA y FACIAL los registra el programa del lector (docs/gym-biometria.md), no la recepción. */
-export type MetodoIngreso = 'QR' | 'MANUAL' | 'CEDULA' | 'HUELLA' | 'FACIAL';
+export type MetodoIngreso = 'QR' | 'MANUAL' | 'CEDULA' | 'HUELLA' | 'FACIAL' | 'TARJETA';
 
 // ── Autorizaciones de datos sensibles (Ley 1581 de 2012) ──
 export type TipoAutorizacion = 'BIOMETRIA' | 'SALUD';
@@ -256,4 +256,161 @@ export interface Venta {
   detalles?: VentaDetalle[];
   miembro?: { id_miembro: number; primer_nombre: string; primer_apellido: string } | null;
   usuarioCobro?: { id_usuario: number; primer_nombre: string; primer_apellido: string } | null;
+}
+
+// ── Lectores biométricos (docs/gym-lectores-biometricos.md del backend) ──
+export type ConexionLector = 'ZK_ADMS' | 'PUENTE' | 'SOLO_REGISTRO';
+export type EstadoLector = 'PENDIENTE' | 'CONECTADO' | 'DESCONECTADO' | 'INACTIVO';
+export type CapacidadAbrirPuerta = boolean | 'sin_confirmar';
+
+export type Capacidad = boolean | 'sin_confirmar';
+
+export interface CapacidadesLector {
+  deshabilitar_sin_borrar?: Capacidad;
+  vigencia_en_aparato?: Capacidad;
+  abrir_puerta?: Capacidad;
+  eventos_en_vivo?: Capacidad;
+}
+
+export interface ModeloLectorCatalogo {
+  modelo: string;
+  conexion_sugerida: ConexionLector;
+  nota?: string;
+}
+
+export interface MarcaLectorCatalogo {
+  /** Clave de la marca (ZKTECO, HIKVISION…): es lo que se manda al crear. */
+  marca: string;
+  modelos: ModeloLectorCatalogo[];
+  /** Formas de conexión posibles para esa marca. */
+  conexiones: ConexionLector[];
+}
+
+export interface ConexionCatalogo {
+  conexion: ConexionLector;
+  titulo: string;
+  capacidades: CapacidadesLector;
+  pasos: string[];
+}
+
+export interface DriverCatalogo {
+  driver: string;
+  marcas: string[];
+  nombre: string;
+  puerto_defecto: number | null;
+  capacidades: CapacidadesLector;
+}
+
+export interface EstrategiaDeshabilitar {
+  valor: string;
+  descripcion: string;
+}
+
+export interface CatalogoLectores {
+  servidor_adms?: string;
+  marcas: MarcaLectorCatalogo[];
+  conexiones: ConexionCatalogo[];
+  drivers: DriverCatalogo[];
+  estrategias_deshabilitar: EstrategiaDeshabilitar[];
+}
+
+export interface Lector {
+  id_lector: number;
+  id_negocio: number;
+  nombre: string;
+  marca: string;
+  modelo: string | null;
+  conexion: ConexionLector;
+  driver: string | null;
+  numero_serie: string | null;
+  direccion_ip: string | null;
+  puerto: number | null;
+  usuario_aparato: string | null;
+  estrategia_deshabilitar?: string | null;
+  admite_vigencia?: boolean;
+  estado: EstadoLector;
+  ultimo_contacto: string | null;
+  ultima_marcacion: string | null;
+  info_aparato?: Record<string, unknown> | null;
+  /** `estado` ya viene calculado por el servidor (CONECTADO si hubo contacto hace <= 3 min). */
+  comandos_pendientes?: number;
+  capacidades?: CapacidadesLector;
+  /** Solo PUENTE: ya se emparejó con un código. */
+  emparejado?: boolean;
+  /** El servidor nunca devuelve la clave; solo si hay una guardada. */
+  tiene_clave?: boolean;
+}
+
+export interface NuevoLector {
+  nombre: string;
+  marca: string;
+  modelo?: string | null;
+  conexion: ConexionLector;
+  driver?: string | null;
+  numero_serie?: string | null;
+  direccion_ip?: string | null;
+  puerto?: number | null;
+  usuario_aparato?: string | null;
+  clave_aparato?: string | null;
+  estrategia_deshabilitar?: string | null;
+}
+
+export type EstadoComandoLector = 'PENDIENTE' | 'ENVIADO' | 'OK' | 'ERROR' | 'REEMPLAZADO';
+export type TipoComandoLector =
+  'HABILITAR' | 'DESHABILITAR' | 'BORRAR' | 'ABRIR_PUERTA' | 'INFO' | 'SINCRONIZAR_HORA';
+
+export interface ComandoLector {
+  id_comando: number;
+  id_lector: number;
+  tipo: TipoComandoLector;
+  id_miembro: number | null;
+  estado: EstadoComandoLector;
+  intentos?: number;
+  resultado?: string | null;
+  creado_en: string;
+  terminado_en?: string | null;
+}
+
+export type ResultadoMarcacion =
+  | 'REGISTRADA' | 'YA_DENTRO' | 'VENCIDO_PERO_ENTRO' | 'DENEGADA'
+  | 'MIEMBRO_DESCONOCIDO' | 'BLOQUEADO_PERO_ENTRO' | 'SIN_AUTORIZACION_BIOMETRICA';
+
+export interface MarcacionLector {
+  id_marcacion: number;
+  id_lector: number;
+  pin: string;
+  fecha_evento: string;
+  verificacion: string | null;
+  concedido: boolean | null;
+  id_miembro: number | null;
+  resultado: ResultadoMarcacion;
+  /** Nombre completo, ya armado por el servidor (null si el número no es de un miembro). */
+  miembro?: string | null;
+}
+
+export interface EstadoMiembroLector {
+  id_lector: number;
+  nombre?: string;
+  comando?: TipoComandoLector | null;
+  estado?: EstadoComandoLector | null;
+  /** La frase lista para mostrar («En el lector», «Revocada, falta borrar del lector»…). */
+  texto: string;
+}
+
+export interface MiembroEnLectores {
+  /** El número que se teclea en el lector: es el `id_miembro`. */
+  numero_en_lector: string;
+  lectores: EstadoMiembroLector[];
+}
+
+export interface LectorDesconocido {
+  sn: string;
+  primera_vez?: string;
+  ultima_vez?: string;
+  veces?: number;
+}
+
+export interface CodigoEmparejamiento {
+  codigo: string;
+  vence: string;
 }
